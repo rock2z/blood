@@ -6,7 +6,6 @@ import {
   checkWinCondition,
   executePlayer,
   tryActivateScarletWoman,
-  promoteMinion,
 } from "../engine/grimoire";
 import { Player } from "../types";
 
@@ -172,26 +171,5 @@ describe("tryActivateScarletWoman", () => {
     const g = createGrimoire(players);
     const { activated } = tryActivateScarletWoman(g);
     expect(activated).toBe(false);
-  });
-});
-
-describe("promoteMinion", () => {
-  test("promotes a living Minion to Imp", () => {
-    const players = [
-      makePlayer({ id: "p1", alignment: "Minion", trueCharacter: "poisoner" }),
-      makePlayer({ id: "p2", alignment: "Townsfolk" }),
-    ];
-    const g = createGrimoire(players);
-    const updated = promoteMinion(g);
-    expect(updated).not.toBeNull();
-    expect(updated!.players.find((p) => p.id === "p1")!.trueCharacter).toBe(
-      "imp",
-    );
-  });
-
-  test("returns null when no living Minion available", () => {
-    const players = [makePlayer({ id: "p1", alignment: "Townsfolk" })];
-    const g = createGrimoire(players);
-    expect(promoteMinion(g)).toBeNull();
   });
 });

@@ -58,7 +58,7 @@ export interface PlayerGrimoire {
 }
 
 /** Full state snapshot sent to the Storyteller */
-export interface StorytelllerSnapshot {
+export interface StorytellerSnapshot {
   role: "storyteller";
   state: GameState;
 }
@@ -79,7 +79,7 @@ export interface PlayerSnapshot {
   grimoire: PlayerGrimoire;
 }
 
-export type StateSnapshot = StorytelllerSnapshot | PlayerSnapshot;
+export type StateSnapshot = StorytellerSnapshot | PlayerSnapshot;
 
 export type ClientRole = "storyteller" | "player";
 

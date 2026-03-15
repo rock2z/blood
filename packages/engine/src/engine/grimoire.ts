@@ -261,37 +261,3 @@ export function tryActivateScarletWoman(grimoire: Grimoire): {
 
   return { grimoire: { ...grimoire, players }, activated: true };
 }
-
-// ============================================================
-// Imp self-kill / Minion promotion
-// ============================================================
-
-/**
- * When the Imp kills themselves (and Scarlet Woman is not eligible),
- * choose a living Minion to become the new Imp.
- * Returns null if no living Minion is available.
- */
-export function promoteMinion(grimoire: Grimoire): Grimoire | null {
-  const aliveMinions = getAlivePlayers(grimoire).filter(
-    (p) => p.alignment === "Minion" && p.trueCharacter !== "scarletwoman",
-  );
-  if (aliveMinions.length === 0) return null;
-
-  // Prefer Poisoner > Spy > Baron (arbitrary priority; Storyteller chooses)
-  const priority: CharacterId[] = ["poisoner", "spy", "baron"];
-  const chosen =
-    aliveMinions.find((p) => priority.includes(p.trueCharacter)) ??
-    aliveMinions[0];
-
-  const players = grimoire.players.map((p) =>
-    p.id === chosen.id
-      ? {
-          ...p,
-          trueCharacter: "imp" as CharacterId,
-          alignment: "Demon" as const,
-        }
-      : p,
-  );
-
-  return { ...grimoire, players };
-}

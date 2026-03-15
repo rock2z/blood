@@ -1875,3 +1875,194 @@ describe("voting order", () => {
     expect(voterIds[voterIds.length - 1]).toBe("p1");
   });
 });
+
+// ============================================================
+// Additional coverage: missing branches
+// ============================================================
+
+describe("resolve-night — throws when pendingMinionPromotion is true", () => {
+  test("calling resolve-night while pendingMinionPromotion throws", () => {
+    const players = [
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 0,
+      }),
+      makePlayer({
+        id: "poisoner",
+        trueCharacter: "poisoner",
+        alignment: "Minion",
+        seatIndex: 1,
+      }),
+      makePlayer({ id: "p1", seatIndex: 2 }),
+    ];
+    let s = dayState(players);
+    s = dispatch(s, { type: "advance-to-night" });
+    s = dispatch(s, {
+      type: "night-choice",
+      playerId: "imp",
+      targetIds: ["imp"],
+    });
+    s = dispatch(s, { type: "resolve-night" });
+    expect(s.pendingMinionPromotion).toBe(true);
+    expect(() => dispatch(s, { type: "resolve-night" })).toThrow(
+      /pendingMinionPromotion/,
+    );
+  });
+});
+
+describe("storyteller-choose-minion — throws when target is dead", () => {
+  test("cannot promote a dead Minion to Imp", () => {
+    const players = [
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 0,
+      }),
+      makePlayer({
+        id: "poisoner",
+        trueCharacter: "poisoner",
+        alignment: "Minion",
+        isAlive: false,
+        seatIndex: 1,
+      }),
+      makePlayer({
+        id: "spy",
+        trueCharacter: "spy",
+        alignment: "Minion",
+        seatIndex: 2,
+      }),
+    ];
+    let s = dayState(players);
+    s = dispatch(s, { type: "advance-to-night" });
+    s = dispatch(s, {
+      type: "night-choice",
+      playerId: "imp",
+      targetIds: ["imp"],
+    });
+    s = dispatch(s, { type: "resolve-night" });
+    expect(s.pendingMinionPromotion).toBe(true);
+    expect(() =>
+      dispatch(s, { type: "storyteller-choose-minion", minionId: "poisoner" }),
+    ).toThrow(/dead/);
+  });
+});
+
+describe("night-choice — throws outside night phase", () => {
+  test("night-choice in day phase throws", () => {
+    const players = [
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 0,
+      }),
+      makePlayer({ id: "p1", seatIndex: 1 }),
+    ];
+    const s = dayState(players);
+    expect(() =>
+      dispatch(s, {
+        type: "night-choice",
+        playerId: "imp",
+        targetIds: ["p1"],
+      }),
+    ).toThrow(/night phase/);
+  });
+});
+
+describe("night-choice — Butler sets butlerMaster", () => {
+  test("Butler night-choice records the master in grimoire", () => {
+    const players = [
+      makePlayer({
+        id: "butler",
+        trueCharacter: "butler",
+        alignment: "Outsider",
+        seatIndex: 0,
+      }),
+      makePlayer({ id: "master", seatIndex: 1 }),
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 2,
+      }),
+    ];
+    let s = firstNightState(players);
+    s = dispatch(s, {
+      type: "night-choice",
+      playerId: "butler",
+      targetIds: ["master"],
+    });
+    expect(s.grimoire.butlerMaster).toBe("master");
+  });
+});
+
+describe("nominate — Virgin self-nomination", () => {
+  test("Virgin nominates themselves: Virgin (as Townsfolk) is executed immediately", () => {
+    const players = [
+      makePlayer({
+        id: "virgin",
+        trueCharacter: "virgin",
+        alignment: "Townsfolk",
+        seatIndex: 0,
+      }),
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 1,
+      }),
+    ];
+    let s = dayState(players);
+    s = dispatch(s, {
+      type: "nominate",
+      nominatorId: "virgin",
+      targetId: "virgin",
+    });
+    // Virgin is the nominator and is Townsfolk → ability fires → Virgin executed
+    expect(s.voting).toBeNull();
+    expect(s.grimoire.players.find((p) => p.id === "virgin")!.isAlive).toBe(
+      false,
+    );
+    expect(s.grimoire.virginAbilityFired).toBe(true);
+  });
+});
+
+describe("vote — Butler with no master set", () => {
+  test("Butler with no master forced to NO regardless of vote", () => {
+    const players = [
+      makePlayer({
+        id: "butler",
+        trueCharacter: "butler",
+        alignment: "Outsider",
+        seatIndex: 0,
+      }),
+      makePlayer({ id: "target", seatIndex: 1 }),
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 2,
+      }),
+    ];
+    let s = dayState(players);
+    // butlerMaster is null (never set)
+    s = dispatch(s, {
+      type: "nominate",
+      nominatorId: "imp",
+      targetId: "target",
+    });
+    // Vote order: butler, target, imp (target at seat 1 → voting starts from seat 2)
+    // Butler has no master → forced to NO
+    for (const vid of s.voting!.eligibleVoterIds) {
+      s = dispatch(s, { type: "vote", playerId: vid, vote: true });
+    }
+    // Butler was forced NO; imp + target YES = 2 out of 3 alive = threshold met
+    // But Butler was forced to NO so candidate depends on imp + target YES = 2/3 ≥ ceil(3/2)=2
+    expect(s.voting).toBeNull();
+    // 2 YES votes (imp + target); butler forced to NO
+    expect(s.executionCandidateId).toBe("target");
+  });
+});

@@ -13,7 +13,7 @@
 import { describe, test, expect } from "vitest";
 import type {
   StateSnapshot,
-  StorytelllerSnapshot,
+  StorytellerSnapshot,
   PlayerSnapshot,
   PublicPlayer,
   PlayerGrimoire,
@@ -23,7 +23,7 @@ import type {
 // Helpers — create mock snapshots matching server shapes
 // ============================================================
 
-function makeStorytelllerSnapshot(): StorytelllerSnapshot {
+function makeStorytellerSnapshot(): StorytellerSnapshot {
   return {
     role: "storyteller",
     state: {
@@ -106,8 +106,8 @@ function makePlayerSnapshot(
 // ============================================================
 
 describe("StateSnapshot discriminated union", () => {
-  test("StorytelllerSnapshot has role=storyteller and a state field", () => {
-    const snap: StateSnapshot = makeStorytelllerSnapshot();
+  test("StorytellerSnapshot has role=storyteller and a state field", () => {
+    const snap: StateSnapshot = makeStorytellerSnapshot();
     expect(snap.role).toBe("storyteller");
     if (snap.role === "storyteller") {
       expect(snap.state).toBeDefined();
@@ -127,7 +127,7 @@ describe("StateSnapshot discriminated union", () => {
 
   test("role discriminant correctly narrows the union", () => {
     const snaps: StateSnapshot[] = [
-      makeStorytelllerSnapshot(),
+      makeStorytellerSnapshot(),
       makePlayerSnapshot(),
     ];
 
@@ -228,12 +228,12 @@ describe("identify message contract", () => {
 });
 
 // ============================================================
-// StorytelllerSnapshot — full grimoire access
+// StorytellerSnapshot — full grimoire access
 // ============================================================
 
-describe("StorytelllerSnapshot full access", () => {
+describe("StorytellerSnapshot full access", () => {
   test("contains grimoire with all secret fields", () => {
-    const snap = makeStorytelllerSnapshot();
+    const snap = makeStorytellerSnapshot();
     const grimoire = snap.state.grimoire;
     expect("impTarget" in grimoire).toBe(true);
     expect("poisonerTarget" in grimoire).toBe(true);
@@ -243,7 +243,7 @@ describe("StorytelllerSnapshot full access", () => {
   });
 
   test("phase transitions are visible to storyteller", () => {
-    const snap = makeStorytelllerSnapshot();
+    const snap = makeStorytellerSnapshot();
     expect(snap.state.phase).toBe("setup");
     // Storyteller can see the full GameState including all phase info
     expect(typeof snap.state.day).toBe("number");

@@ -11,7 +11,7 @@
 
 import { handleMessage, sendSnapshot, ClientSocket } from "../handler";
 import { createRoom } from "../room";
-import { StorytelllerSnapshot, PlayerSnapshot } from "../stateFilter";
+import { StorytellerSnapshot, PlayerSnapshot } from "../stateFilter";
 import { Player } from "@botc/engine";
 
 // ============================================================
@@ -47,10 +47,10 @@ function lastMsg(client: MockClient): { type: string; payload: unknown } {
 
 function lastSnapshot(
   client: MockClient,
-): StorytelllerSnapshot | PlayerSnapshot {
+): StorytellerSnapshot | PlayerSnapshot {
   const msg = lastMsg(client);
   expect(msg.type).toBe("snapshot");
-  return msg.payload as StorytelllerSnapshot | PlayerSnapshot;
+  return msg.payload as StorytellerSnapshot | PlayerSnapshot;
 }
 
 /** Minimal valid player list for a 5-player game */
@@ -145,7 +145,7 @@ describe("ping → pong", () => {
 // ============================================================
 
 describe("identify", () => {
-  test("client identified as storyteller receives StorytelllerSnapshot", () => {
+  test("client identified as storyteller receives StorytellerSnapshot", () => {
     const room = createRoom("test");
     const client = makeMockClient("test", "player");
     room.clients.add(client);
@@ -155,7 +155,7 @@ describe("identify", () => {
       payload: { role: "storyteller" },
     });
 
-    const snap = lastSnapshot(client) as StorytelllerSnapshot;
+    const snap = lastSnapshot(client) as StorytellerSnapshot;
     expect(snap.role).toBe("storyteller");
     expect(snap.state).toBeDefined();
     expect(snap.state.grimoire).toBeDefined();
@@ -221,7 +221,7 @@ describe("setup-players", () => {
     });
 
     // Storyteller gets full snapshot
-    const stSnap = lastSnapshot(storyteller) as StorytelllerSnapshot;
+    const stSnap = lastSnapshot(storyteller) as StorytellerSnapshot;
     expect(stSnap.role).toBe("storyteller");
     expect(stSnap.state.grimoire.players).toHaveLength(5);
 
@@ -358,7 +358,7 @@ describe("Storyteller receives full state", () => {
       payload: makePlayers(),
     });
 
-    const snap = lastSnapshot(storyteller) as StorytelllerSnapshot;
+    const snap = lastSnapshot(storyteller) as StorytellerSnapshot;
     const characters = snap.state.grimoire.players.map((p) => p.trueCharacter);
     expect(characters).toContain("imp");
     expect(characters).toContain("poisoner");
@@ -375,7 +375,7 @@ describe("Storyteller receives full state", () => {
       payload: makePlayers(),
     });
 
-    const snap = lastSnapshot(storyteller) as StorytelllerSnapshot;
+    const snap = lastSnapshot(storyteller) as StorytellerSnapshot;
     // impTarget exists in grimoire (null initially, but field is present)
     expect("impTarget" in snap.state.grimoire).toBe(true);
     expect("poisonerTarget" in snap.state.grimoire).toBe(true);
@@ -510,7 +510,7 @@ describe("broadcastSnapshots", () => {
       payload: makePlayers(),
     });
 
-    const stSnap = lastSnapshot(stClient) as StorytelllerSnapshot;
+    const stSnap = lastSnapshot(stClient) as StorytellerSnapshot;
     const plSnap = lastSnapshot(plClient) as PlayerSnapshot;
 
     expect(stSnap.role).toBe("storyteller");
@@ -577,7 +577,7 @@ describe("action → broadcast", () => {
       payload: { type: "start-game" },
     });
 
-    const snap = lastSnapshot(stClient) as StorytelllerSnapshot;
+    const snap = lastSnapshot(stClient) as StorytellerSnapshot;
     expect(snap.state.phase).toBe("first-night");
     expect(snap.state.day).toBe(0);
   });

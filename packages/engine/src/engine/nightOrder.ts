@@ -56,9 +56,34 @@ export function getEachNightOrder(
   const alive = getAlivePlayers(grimoire);
   const steps = buildSteps(alive, (char) => char.eachNightOrder);
 
-  // Ravenkeeper fires only if killed this night
+  // Ravenkeeper fires only if killed this night. Because they are already dead
+  // by the time this function is called, we must look them up from all players
+  // (not just alive) and insert them at their correct night-order position.
   if (!ravenkeeperKilledThisNight) {
     return steps.filter((s) => s.character !== "ravenkeeper");
+  }
+
+  // Include the dead Ravenkeeper if not already present (they are dead so
+  // buildSteps above would have skipped them).
+  if (!steps.some((s) => s.character === "ravenkeeper")) {
+    const rkPlayer = grimoire.players.find(
+      (p) => p.trueCharacter === "ravenkeeper",
+    );
+    if (rkPlayer) {
+      steps.push({
+        character: "ravenkeeper",
+        player: rkPlayer,
+        action: nightAction("ravenkeeper"),
+      });
+      // Re-sort to place Ravenkeeper at its correct position (eachNightOrder: 5)
+      steps.sort((a, b) => {
+        const aOrder =
+          TROUBLE_BREWING_CHARACTERS[a.character].eachNightOrder ?? 0;
+        const bOrder =
+          TROUBLE_BREWING_CHARACTERS[b.character].eachNightOrder ?? 0;
+        return aOrder - bOrder;
+      });
+    }
   }
 
   return steps;

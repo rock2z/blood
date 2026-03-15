@@ -2,6 +2,8 @@ import {
   getSetupCounts,
   buildTokenBag,
   selectDemonBluffs,
+  selectFortuneTellerRedHerring,
+  findDrunkFakeCharacter,
 } from "../engine/setup";
 import { TB_BY_ALIGNMENT } from "../data/troubleBrewing";
 
@@ -124,5 +126,79 @@ describe("selectDemonBluffs", () => {
         ...TB_BY_ALIGNMENT.outsiders,
       ]).toContain(bluff);
     }
+  });
+});
+
+describe("selectFortuneTellerRedHerring", () => {
+  const goodPlayers = [
+    {
+      id: "p1",
+      trueCharacter: "washerwoman" as const,
+      alignment: "Townsfolk" as const,
+    },
+    {
+      id: "p2",
+      trueCharacter: "empath" as const,
+      alignment: "Townsfolk" as const,
+    },
+    {
+      id: "p3",
+      trueCharacter: "butler" as const,
+      alignment: "Outsider" as const,
+    },
+  ];
+
+  test("returns a player ID from the good-player list", () => {
+    const id = selectFortuneTellerRedHerring(goodPlayers, 1);
+    expect(id).not.toBeNull();
+    expect(goodPlayers.map((p) => p.id)).toContain(id);
+  });
+
+  test("returns null when no good players provided", () => {
+    const id = selectFortuneTellerRedHerring([], 1);
+    expect(id).toBeNull();
+  });
+
+  test("only selects Townsfolk or Outsider players (not Minion/Demon)", () => {
+    const mixedPlayers = [
+      ...goodPlayers,
+      {
+        id: "evil1",
+        trueCharacter: "imp" as const,
+        alignment: "Demon" as const,
+      },
+      {
+        id: "evil2",
+        trueCharacter: "poisoner" as const,
+        alignment: "Minion" as const,
+      },
+    ];
+    for (let seed = 0; seed < 10; seed++) {
+      const id = selectFortuneTellerRedHerring(mixedPlayers, seed);
+      expect(id).not.toBe("evil1");
+      expect(id).not.toBe("evil2");
+    }
+  });
+});
+
+describe("findDrunkFakeCharacter", () => {
+  test("returns null when Drunk is not in the bag", () => {
+    const bag = [
+      "washerwoman",
+      "empath",
+      "imp",
+    ] as import("../types").CharacterId[];
+    const result = findDrunkFakeCharacter(bag, TB_BY_ALIGNMENT.townsfolk);
+    expect(result).toBeNull();
+  });
+
+  test("returns a Townsfolk character not already in the bag", () => {
+    const bag = ["drunk", "empath", "imp"] as import("../types").CharacterId[];
+    const result = findDrunkFakeCharacter(bag, TB_BY_ALIGNMENT.townsfolk);
+    expect(result).not.toBeNull();
+    // Must be a Townsfolk
+    expect(TB_BY_ALIGNMENT.townsfolk).toContain(result);
+    // Must not be one already in the bag
+    expect(bag).not.toContain(result);
   });
 });

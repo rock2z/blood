@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "ts-node src/index.ts",
+    "pretest": "npm run build --workspace=@botc/engine",
     "test": "jest --coverage --passWithNoTests",
     "typecheck": "tsc --noEmit"
   },
