@@ -26,6 +26,7 @@ import {
   StorytellerMayorRedirectAction,
   RavenkeeperChoiceAction,
   StorytellerChooseMinionAction,
+  StorytellerDeliverInfoAction,
 } from "./actions";
 
 // ============================================================
@@ -58,6 +59,8 @@ export function dispatch(state: GameState, action: Action): GameState {
       return handleRavenkeeperChoice(state, action);
     case "storyteller-choose-minion":
       return handleStorytellerChooseMinion(state, action);
+    case "storyteller-deliver-info":
+      return handleStorytellerDeliverInfo(state, action);
     default:
       throw new Error(`Unknown action type: ${(action as Action).type}`);
   }
@@ -97,6 +100,7 @@ function handleAdvanceToNight(state: GameState): GameState {
     executionCandidateVotes: 0,
     nominatorsUsed: [],
     nominatedToday: [],
+    nightInfo: {},
   };
 }
 
@@ -260,6 +264,7 @@ function finaliseNightResolution(state: GameState): GameState {
     nominatedToday: [],
     pendingRavenkeeperChoice: false,
     pendingMinionPromotion: false,
+    nightInfo: {},
   };
 }
 
@@ -805,4 +810,23 @@ function handleSlayerShoot(
   // If target is not Demon: ability is wasted (no effect, just marked used)
 
   return updatedState;
+}
+
+// ============================================================
+// Storyteller: deliver night information to a player
+// ============================================================
+
+function handleStorytellerDeliverInfo(
+  state: GameState,
+  action: StorytellerDeliverInfoAction,
+): GameState {
+  if (state.phase !== "first-night" && state.phase !== "night") {
+    throw new Error(
+      `storyteller-deliver-info requires a night phase, got "${state.phase}"`,
+    );
+  }
+  return {
+    ...state,
+    nightInfo: { ...state.nightInfo, [action.playerId]: action.info },
+  };
 }

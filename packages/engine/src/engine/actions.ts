@@ -147,6 +147,19 @@ export interface StorytellerChooseMinionAction {
   minionId: PlayerId;
 }
 
+/**
+ * Storyteller delivers night information to a specific player.
+ * Used for info-giving characters (Washerwoman, Empath, Chef, etc.).
+ * The Storyteller composes the info string after consulting the Grimoire;
+ * false information may be sent to poisoned or Drunk players.
+ * Only valid during a night phase.
+ */
+export interface StorytellerDeliverInfoAction {
+  type: "storyteller-deliver-info";
+  playerId: PlayerId;
+  info: string;
+}
+
 // ============================================================
 // Union
 // ============================================================
@@ -163,4 +176,5 @@ export type Action =
   | SlayerShootAction
   | StorytellerMayorRedirectAction
   | RavenkeeperChoiceAction
-  | StorytellerChooseMinionAction;
+  | StorytellerChooseMinionAction
+  | StorytellerDeliverInfoAction;

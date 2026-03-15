@@ -37,6 +37,7 @@ function makeStorytellerSnapshot(): StorytellerSnapshot {
       nominatedToday: [],
       pendingRavenkeeperChoice: false,
       pendingMinionPromotion: false,
+      nightInfo: {},
       log: [],
       grimoire: {
         players: [],
@@ -77,6 +78,7 @@ function makePlayerGrimoire(
     slayerUsed: false,
     virginAbilityFired: false,
     executedToday: null,
+    myNightInfo: null,
     ...overrides,
   };
 }

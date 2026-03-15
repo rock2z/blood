@@ -614,6 +614,18 @@ function NightOrderPanel({
   );
 }
 
+/** Characters that receive information from the Storyteller each night */
+const INFO_DELIVERY_CHARS = new Set<CharacterId>([
+  "washerwoman",
+  "librarian",
+  "investigator",
+  "chef",
+  "empath",
+  "fortuneteller",
+  "butler",
+  "undertaker",
+]);
+
 function NightStepCard({
   stepKey,
   step,
@@ -634,6 +646,18 @@ function NightStepCard({
   const alivePlayers = state.grimoire.players.filter((p) => p.isAlive);
   const [target1, setTarget1] = useState(alivePlayers[0]?.id ?? "");
   const [target2, setTarget2] = useState(alivePlayers[1]?.id ?? "");
+  const [infoText, setInfoText] = useState("");
+  const [infoSent, setInfoSent] = useState(false);
+
+  const handleSendInfo = () => {
+    dispatch({
+      type: "storyteller-deliver-info",
+      playerId: step.player.id,
+      info: infoText,
+    });
+    setInfoSent(true);
+    setInfoText("");
+  };
 
   const handleDispatch = () => {
     const targetIds =
@@ -719,6 +743,46 @@ function NightStepCard({
         <div style={{ marginLeft: 20, fontSize: 12, color: "#555" }}>
           Check grimoire: nod if either picked player is the Demon or the red
           herring ({state.grimoire.fortuneTellerRedHerring ?? "not set"}).
+        </div>
+      )}
+
+      {/* Info delivery: send the Storyteller-composed info string to the player */}
+      {INFO_DELIVERY_CHARS.has(step.character) && (
+        <div
+          style={{
+            marginLeft: 20,
+            marginTop: 6,
+            padding: "6px 8px",
+            background: "#fffbe6",
+            border: "1px solid #ffe58f",
+            borderRadius: 4,
+          }}
+        >
+          <div style={{ fontSize: 12, fontWeight: "bold", marginBottom: 4 }}>
+            Send info to {step.player.name}
+          </div>
+          {infoSent ? (
+            <div style={{ fontSize: 12, color: "#389e0d" }}>
+              ✓ Info sent to {step.player.name}
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <input
+                type="text"
+                value={infoText}
+                onChange={(e) => setInfoText(e.target.value)}
+                placeholder="Compose info for this player…"
+                style={{ flex: 1, fontSize: 12, padding: "2px 6px" }}
+              />
+              <button
+                onClick={handleSendInfo}
+                disabled={infoText.trim() === ""}
+                style={{ fontSize: 12 }}
+              >
+                Send
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

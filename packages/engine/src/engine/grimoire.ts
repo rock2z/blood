@@ -47,6 +47,7 @@ export function createGameState(players: Player[]): GameState {
     nominatedToday: [],
     pendingRavenkeeperChoice: false,
     pendingMinionPromotion: false,
+    nightInfo: {},
   };
 }
 

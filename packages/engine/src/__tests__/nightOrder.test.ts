@@ -113,6 +113,41 @@ describe("getEachNightOrder", () => {
     const chars = steps.map((s) => s.character);
     expect(chars).not.toContain("ravenkeeper");
   });
+
+  test("dead Ravenkeeper is sorted to position 5 (between Imp at 4 and Empath at 6)", () => {
+    const players = [
+      makePlayer({ id: "p1", trueCharacter: "poisoner", alignment: "Minion" }), // order 1
+      makePlayer({ id: "p2", trueCharacter: "monk" }), // order 3
+      makePlayer({ id: "p3", trueCharacter: "imp", alignment: "Demon" }), // order 4
+      makePlayer({ id: "p4", trueCharacter: "ravenkeeper", isAlive: false }), // order 5 (dead, re-inserted)
+      makePlayer({ id: "p5", trueCharacter: "empath" }), // order 6
+      makePlayer({ id: "p6", trueCharacter: "butler", alignment: "Outsider" }), // order 9
+    ];
+    const g = createGrimoire(players);
+    const steps = getEachNightOrder(g, true);
+    expect(steps.map((s) => s.character)).toEqual([
+      "poisoner",
+      "monk",
+      "imp",
+      "ravenkeeper",
+      "empath",
+      "butler",
+    ]);
+  });
+
+  test("alive Ravenkeeper with ravenkeeperKilledThisNight=true is not double-inserted", () => {
+    // Edge case: Ravenkeeper is alive but ravenkeeperKilledThisNight flag is true.
+    // The guard at line 68 (!steps.some(s => s.character === "ravenkeeper"))
+    // prevents double-insertion since buildSteps already added the alive Ravenkeeper.
+    const players = [
+      makePlayer({ id: "p1", trueCharacter: "imp", alignment: "Demon" }),
+      makePlayer({ id: "p2", trueCharacter: "ravenkeeper", isAlive: true }),
+    ];
+    const g = createGrimoire(players);
+    const steps = getEachNightOrder(g, true);
+    const rkSteps = steps.filter((s) => s.character === "ravenkeeper");
+    expect(rkSteps).toHaveLength(1);
+  });
 });
 
 describe("getFirstNightPreSteps", () => {

@@ -49,5 +49,5 @@ export function App(): React.ReactElement {
     return <StorytellerView state={state.state} send={send} />;
   }
 
-  return <PlayerView state={state} />;
+  return <PlayerView state={state} send={send} playerId={playerId} />;
 }

@@ -98,6 +98,7 @@ export function handleMessage(
       const storytellerOnlyActions = new Set([
         "storyteller-mayor-redirect",
         "storyteller-choose-minion",
+        "storyteller-deliver-info",
       ]);
       if (
         storytellerOnlyActions.has(action.type) &&
