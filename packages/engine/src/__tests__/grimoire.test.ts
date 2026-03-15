@@ -76,13 +76,42 @@ describe("checkWinCondition", () => {
     expect(checkWinCondition(g)).toBe("good");
   });
 
-  test("returns null when Demon is alive", () => {
+  test("returns null when Demon is alive and 3+ players alive", () => {
+    const players = [
+      makePlayer({ id: "p1", alignment: "Townsfolk" }),
+      makePlayer({ id: "p2", alignment: "Townsfolk" }),
+      makePlayer({ id: "p3", alignment: "Demon" }),
+    ];
+    const g = createGrimoire(players);
+    expect(checkWinCondition(g)).toBeNull();
+  });
+
+  test("evil wins when exactly 2 players are alive (Demon + 1 good)", () => {
     const players = [
       makePlayer({ id: "p1", alignment: "Townsfolk" }),
       makePlayer({ id: "p2", alignment: "Demon" }),
     ];
     const g = createGrimoire(players);
-    expect(checkWinCondition(g)).toBeNull();
+    expect(checkWinCondition(g)).toBe("evil");
+  });
+
+  test("evil wins when only 1 player alive (Demon alone)", () => {
+    const players = [
+      makePlayer({ id: "p1", alignment: "Townsfolk", isAlive: false }),
+      makePlayer({ id: "p2", alignment: "Demon" }),
+    ];
+    const g = createGrimoire(players);
+    expect(checkWinCondition(g)).toBe("evil");
+  });
+
+  test("good win (no Demon) takes priority over evil 2-alive check", () => {
+    // Both Demon dead and only 2 alive — good wins because Demon is dead
+    const players = [
+      makePlayer({ id: "p1", alignment: "Townsfolk" }),
+      makePlayer({ id: "p2", alignment: "Demon", isAlive: false }),
+    ];
+    const g = createGrimoire(players);
+    expect(checkWinCondition(g)).toBe("good");
   });
 
   // Mayor 3-player win is a day-end condition checked in handleSkipExecution,
@@ -101,6 +130,7 @@ describe("executePlayer", () => {
   });
 
   test("poisoned Saint execution does NOT end the game", () => {
+    // Need 4 players so executing the saint leaves 3 alive (not triggering evil 2-alive win)
     const players = [
       makePlayer({
         id: "p1",
@@ -109,6 +139,12 @@ describe("executePlayer", () => {
         isPoisoned: true,
       }),
       makePlayer({ id: "p2", alignment: "Demon", trueCharacter: "imp" }),
+      makePlayer({
+        id: "p3",
+        alignment: "Townsfolk",
+        trueCharacter: "washerwoman",
+      }),
+      makePlayer({ id: "p4", alignment: "Townsfolk", trueCharacter: "chef" }),
     ];
     const state = createGameState(players);
     const { winner } = executePlayer(state, "p1");

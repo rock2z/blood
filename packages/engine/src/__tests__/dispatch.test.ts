@@ -122,6 +122,7 @@ describe("resolve-night — phase transitions", () => {
         alignment: "Demon",
         seatIndex: 1,
       }),
+      makePlayer({ id: "p2", seatIndex: 2 }),
     ];
     const s = dispatch(firstNightState(players), { type: "resolve-night" });
     expect(s.phase).toBe("day");
@@ -258,6 +259,7 @@ describe("resolve-night — Soldier", () => {
         seatIndex: 0,
       }),
       makePlayer({ id: "soldier", trueCharacter: "soldier", seatIndex: 1 }),
+      makePlayer({ id: "p1", seatIndex: 2 }),
     ];
     let s = dayState(players);
     s = dispatch(s, { type: "advance-to-night" });
@@ -281,6 +283,7 @@ describe("resolve-night — Soldier", () => {
         seatIndex: 0,
       }),
       makePlayer({ id: "soldier", trueCharacter: "soldier", seatIndex: 1 }),
+      makePlayer({ id: "p1", seatIndex: 2 }),
     ];
     let s = dayState(players);
     s = dispatch(s, { type: "advance-to-night" });
@@ -409,6 +412,7 @@ describe("resolve-night — Imp self-kill (Minion promotion)", () => {
   });
 
   test("storyteller-choose-minion promotes the chosen player to Imp and transitions to day", () => {
+    // Need 4 players so after imp dies and poisoner is promoted, 3 remain alive
     const players = [
       makePlayer({
         id: "imp",
@@ -423,6 +427,7 @@ describe("resolve-night — Imp self-kill (Minion promotion)", () => {
         seatIndex: 1,
       }),
       makePlayer({ id: "p1", seatIndex: 2 }),
+      makePlayer({ id: "p2", seatIndex: 3 }),
     ];
     let s = dayState(players);
     s = dispatch(s, { type: "advance-to-night" });
@@ -501,6 +506,7 @@ describe("resolve-night — Imp self-kill (Minion promotion)", () => {
         seatIndex: 0,
       }),
       makePlayer({ id: "p1", seatIndex: 1 }),
+      makePlayer({ id: "p2", seatIndex: 2 }),
     ];
     let s = dayState(players);
     s = dispatch(s, { type: "advance-to-night" });
@@ -638,6 +644,7 @@ describe("resolve-night — Ravenkeeper", () => {
     }),
     makePlayer({ id: "rk", trueCharacter: "ravenkeeper", seatIndex: 1 }),
     makePlayer({ id: "p1", seatIndex: 2 }),
+    makePlayer({ id: "p2", seatIndex: 3 }),
   ];
 
   test("pendingRavenkeeperChoice set when Ravenkeeper is killed", () => {
@@ -710,6 +717,7 @@ describe("resolve-night — good wins when Demon dies", () => {
         seatIndex: 0,
       }),
       makePlayer({ id: "p1", seatIndex: 1 }),
+      makePlayer({ id: "p2", seatIndex: 2 }),
     ];
     let s = dayState(players);
     s = dispatch(s, { type: "advance-to-night" });
@@ -739,6 +747,7 @@ describe("advance-to-night", () => {
         alignment: "Demon",
         seatIndex: 1,
       }),
+      makePlayer({ id: "p2", seatIndex: 2 }),
     ];
     const s = dispatch(dayState(players), { type: "advance-to-night" });
     expect(s.phase).toBe("night");
@@ -770,6 +779,7 @@ describe("advance-to-night", () => {
         alignment: "Demon",
         seatIndex: 1,
       }),
+      makePlayer({ id: "p2", seatIndex: 2 }),
     ];
     let s = dayState(players);
     // Manually simulate poison persisting from previous night
@@ -1307,6 +1317,7 @@ describe("vote — Butler constraint", () => {
 
 describe("vote — ghost vote", () => {
   test("dead player voting YES marks ghostVoteUsed", () => {
+    // Need 3 alive (p1, imp, p2) so dayState doesn't trigger evil 2-alive win
     const players = [
       makePlayer({
         id: "dead",
@@ -1321,6 +1332,7 @@ describe("vote — ghost vote", () => {
         alignment: "Demon",
         seatIndex: 2,
       }),
+      makePlayer({ id: "p2", seatIndex: 3 }),
     ];
     let s = dayState(players);
     s = dispatch(s, { type: "nominate", nominatorId: "p1", targetId: "imp" });
@@ -1347,6 +1359,7 @@ describe("vote — ghost vote", () => {
         alignment: "Demon",
         seatIndex: 2,
       }),
+      makePlayer({ id: "p2", seatIndex: 3 }),
     ];
     let s = dayState(players);
     s = dispatch(s, { type: "nominate", nominatorId: "p1", targetId: "imp" });
@@ -1365,6 +1378,7 @@ describe("vote — ghost vote", () => {
 
 describe("execute", () => {
   test("non-Saint non-Demon execution kills the player; game continues", () => {
+    // Need 4 players so executing p1 leaves 3 alive (no evil 2-alive win)
     const players = [
       makePlayer({ id: "p1", seatIndex: 0 }),
       makePlayer({
@@ -1373,6 +1387,8 @@ describe("execute", () => {
         alignment: "Demon",
         seatIndex: 1,
       }),
+      makePlayer({ id: "p2", seatIndex: 2 }),
+      makePlayer({ id: "p3", seatIndex: 3 }),
     ];
     let s = dayState(players);
     s = dispatch(s, { type: "execute", targetId: "p1" });
@@ -1390,6 +1406,7 @@ describe("execute", () => {
         alignment: "Demon",
         seatIndex: 1,
       }),
+      makePlayer({ id: "p2", seatIndex: 2 }),
     ];
     let s = dayState(players);
     s = dispatch(s, { type: "execute", targetId: "imp" });
@@ -1444,6 +1461,7 @@ describe("execute", () => {
         alignment: "Demon",
         seatIndex: 1,
       }),
+      makePlayer({ id: "p1", seatIndex: 2 }),
     ];
     let s = dayState(players);
     s = dispatch(s, { type: "execute", targetId: "saint" });
@@ -1452,6 +1470,7 @@ describe("execute", () => {
   });
 
   test("executing the poisoned Saint does NOT trigger evil win", () => {
+    // Need 4 players so executing the saint leaves 3 alive (no evil 2-alive win)
     const players = [
       makePlayer({
         id: "saint",
@@ -1466,6 +1485,8 @@ describe("execute", () => {
         alignment: "Demon",
         seatIndex: 1,
       }),
+      makePlayer({ id: "p1", seatIndex: 2 }),
+      makePlayer({ id: "p2", seatIndex: 3 }),
     ];
     // isPoisoned: true persists through dayState (not cleared at dawn)
     let s = dayState(players);
@@ -1593,6 +1614,83 @@ describe("skip-execution", () => {
 });
 
 // ============================================================
+// evil win — 2 players alive
+// ============================================================
+
+describe("evil win — 2 players alive", () => {
+  test("night kill leaving 2 alive triggers evil win", () => {
+    // 3 players: imp, p1, p2. Imp kills p1 → 2 alive → evil wins.
+    const players = [
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 0,
+      }),
+      makePlayer({ id: "p1", trueCharacter: "washerwoman", seatIndex: 1 }),
+      makePlayer({ id: "p2", trueCharacter: "chef", seatIndex: 2 }),
+    ];
+    let s = dayState(players);
+    s = dispatch(s, { type: "advance-to-night" });
+    s = dispatch(s, {
+      type: "night-choice",
+      playerId: "imp",
+      targetIds: ["p1"],
+    });
+    s = dispatch(s, { type: "resolve-night" });
+
+    expect(s.grimoire.players.find((p) => p.id === "p1")!.isAlive).toBe(false);
+    expect(s.winner).toBe("evil");
+    expect(s.phase).toBe("game-over");
+  });
+
+  test("execution leaving 2 alive triggers evil win", () => {
+    // 3 players: imp, p1, p2. Execute p2 → 2 alive → evil wins.
+    const players = [
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 0,
+      }),
+      makePlayer({ id: "p1", trueCharacter: "washerwoman", seatIndex: 1 }),
+      makePlayer({ id: "p2", trueCharacter: "chef", seatIndex: 2 }),
+    ];
+    let s = dayState(players);
+    s = dispatch(s, {
+      type: "nominate",
+      nominatorId: "p1",
+      targetId: "p2",
+    });
+    s = castAllYes(s);
+    s = dispatch(s, { type: "execute", targetId: "p2" });
+
+    expect(s.grimoire.players.find((p) => p.id === "p2")!.isAlive).toBe(false);
+    expect(s.winner).toBe("evil");
+    expect(s.phase).toBe("game-over");
+  });
+
+  test("skip-execution with 2 alive triggers evil win", () => {
+    // 2 alive (imp + p1) in day phase — reached e.g. after a night kill earlier.
+    // Construct state directly since dayState would itself trigger evil win at night end.
+    const players = [
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 0,
+      }),
+      makePlayer({ id: "p1", trueCharacter: "washerwoman", seatIndex: 1 }),
+    ];
+    const s: GameState = { ...createGameState(players), phase: "day", day: 2 };
+    const next = dispatch(s, { type: "skip-execution" });
+
+    expect(next.winner).toBe("evil");
+    expect(next.phase).toBe("game-over");
+  });
+});
+
+// ============================================================
 // slayer-shoot
 // ============================================================
 
@@ -1606,6 +1704,7 @@ describe("slayer-shoot", () => {
         alignment: "Demon",
         seatIndex: 1,
       }),
+      makePlayer({ id: "p1", seatIndex: 2 }),
     ];
     let s = dayState(players);
     s = dispatch(s, {
@@ -1659,6 +1758,7 @@ describe("slayer-shoot", () => {
         alignment: "Demon",
         seatIndex: 1,
       }),
+      makePlayer({ id: "p1", seatIndex: 2 }),
     ];
     // isPoisoned: true persists through dayState
     let s = dayState(players);
@@ -1914,6 +2014,7 @@ describe("resolve-night — throws when pendingMinionPromotion is true", () => {
 
 describe("storyteller-choose-minion — throws when target is dead", () => {
   test("cannot promote a dead Minion to Imp", () => {
+    // Need 3 alive (imp + spy + p1) so dayState doesn't trigger evil 2-alive win
     const players = [
       makePlayer({
         id: "imp",
@@ -1934,6 +2035,7 @@ describe("storyteller-choose-minion — throws when target is dead", () => {
         alignment: "Minion",
         seatIndex: 2,
       }),
+      makePlayer({ id: "p1", seatIndex: 3 }),
     ];
     let s = dayState(players);
     s = dispatch(s, { type: "advance-to-night" });
@@ -1969,6 +2071,55 @@ describe("night-choice — throws outside night phase", () => {
         targetIds: ["p1"],
       }),
     ).toThrow(/night phase/);
+  });
+});
+
+describe("night-choice — self-targeting validation", () => {
+  test("Monk targeting themselves throws", () => {
+    const players = [
+      makePlayer({ id: "monk", trueCharacter: "monk", seatIndex: 0 }),
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 1,
+      }),
+      makePlayer({ id: "p1", seatIndex: 2 }),
+    ];
+    const s = dayState(players);
+    const night = dispatch(s, { type: "advance-to-night" });
+    expect(() =>
+      dispatch(night, {
+        type: "night-choice",
+        playerId: "monk",
+        targetIds: ["monk"],
+      }),
+    ).toThrow("Monk cannot protect themselves");
+  });
+
+  test("Butler choosing themselves as master throws", () => {
+    const players = [
+      makePlayer({
+        id: "butler",
+        trueCharacter: "butler",
+        alignment: "Outsider",
+        seatIndex: 0,
+      }),
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 1,
+      }),
+    ];
+    const s = firstNightState(players);
+    expect(() =>
+      dispatch(s, {
+        type: "night-choice",
+        playerId: "butler",
+        targetIds: ["butler"],
+      }),
+    ).toThrow("Butler cannot choose themselves as master");
   });
 });
 
@@ -2014,6 +2165,7 @@ describe("nominate — Virgin self-nomination", () => {
         alignment: "Demon",
         seatIndex: 1,
       }),
+      makePlayer({ id: "p1", seatIndex: 2 }),
     ];
     let s = dayState(players);
     s = dispatch(s, {
