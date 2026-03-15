@@ -178,6 +178,8 @@ export type GameEventType =
   | "demon-bluffs-assigned"
   | "scarlet-woman-activated"
   | "imp-self-killed"
+  | "imp-minion-promotion"
+  | "ravenkeeper-fired"
   | "slayer-fired"
   | "virgin-triggered"
   | "mayor-redirect"

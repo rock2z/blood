@@ -24,8 +24,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build engine
-        run: npm run build --workspace=packages/engine
+      - name: Build (all packages via project references)
+        run: tsc -b
 
       - name: Typecheck (all packages)
         run: npm run typecheck

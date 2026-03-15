@@ -303,7 +303,7 @@ function handleRavenkeeperChoice(
   const log = [
     ...state.log,
     {
-      type: "player-died" as const, // reuse for tracking; Ravenkeeper info is Storyteller-delivered
+      type: "ravenkeeper-fired" as const,
       night: state.day,
       phase: state.phase,
       payload: { ravenkeeperTarget: action.targetId },
@@ -347,7 +347,7 @@ function handleStorytellerChooseMinion(
   const log = [
     ...state.log,
     {
-      type: "scarlet-woman-activated" as const, // reuse; represents "new Demon created"
+      type: "imp-minion-promotion" as const,
       night: state.day,
       phase: state.phase,
       payload: { newImpId: action.minionId },

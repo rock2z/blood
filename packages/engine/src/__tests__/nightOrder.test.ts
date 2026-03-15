@@ -91,10 +91,11 @@ describe("getEachNightOrder", () => {
     ]);
   });
 
-  test("Ravenkeeper included when killed this night", () => {
+  test("Ravenkeeper included when killed this night (already dead — realistic scenario)", () => {
+    // Ravenkeeper is dead (killed by Imp this night) — isAlive: false
     const players = [
       makePlayer({ id: "p1", trueCharacter: "imp", alignment: "Demon" }),
-      makePlayer({ id: "p2", trueCharacter: "ravenkeeper" }),
+      makePlayer({ id: "p2", trueCharacter: "ravenkeeper", isAlive: false }),
     ];
     const g = createGrimoire(players);
     const steps = getEachNightOrder(g, true);

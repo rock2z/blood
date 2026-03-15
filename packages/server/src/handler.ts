@@ -9,7 +9,7 @@
  *   { type: "ping" }                             — keepalive
  *
  * Message protocol (server → client):
- *   { type: "snapshot", payload: StorytelllerSnapshot | PlayerSnapshot }
+ *   { type: "snapshot", payload: StorytellerSnapshot | PlayerSnapshot }
  *                                — state visible to this client
  *   { type: "error",    payload: string }        — error description
  *   { type: "pong" }                             — keepalive response
@@ -93,6 +93,25 @@ export function handleMessage(
 
     case "action": {
       const action = payload as Action;
+
+      // Guard Storyteller-only actions so regular players cannot dispatch them.
+      const storytellerOnlyActions = new Set([
+        "storyteller-mayor-redirect",
+        "storyteller-choose-minion",
+      ]);
+      if (
+        storytellerOnlyActions.has(action.type) &&
+        client.identity?.role !== "storyteller"
+      ) {
+        client.send(
+          JSON.stringify({
+            type: "error",
+            payload: `Action "${action.type}" is restricted to the Storyteller`,
+          }),
+        );
+        return;
+      }
+
       try {
         room.state = dispatch(room.state, action);
         broadcastSnapshots(room);

@@ -45,7 +45,7 @@ export interface PlayerGrimoire {
 }
 
 /** The full state snapshot sent to the Storyteller */
-export interface StorytelllerSnapshot {
+export interface StorytellerSnapshot {
   role: "storyteller";
   state: GameState;
 }
@@ -66,14 +66,14 @@ export interface PlayerSnapshot {
   grimoire: PlayerGrimoire;
 }
 
-export type StateSnapshot = StorytelllerSnapshot | PlayerSnapshot;
+export type StateSnapshot = StorytellerSnapshot | PlayerSnapshot;
 
 // ============================================================
 // Filter functions
 // ============================================================
 
 /** Full state for the Storyteller — no filtering needed */
-export function filterForStoryteller(state: GameState): StorytelllerSnapshot {
+export function filterForStoryteller(state: GameState): StorytellerSnapshot {
   return { role: "storyteller", state };
 }
 
