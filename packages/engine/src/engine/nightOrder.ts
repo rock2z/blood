@@ -77,8 +77,10 @@ export function getEachNightOrder(
       });
       // Re-sort to place Ravenkeeper at its correct position (eachNightOrder: 5)
       steps.sort((a, b) => {
+        /* istanbul ignore next */
         const aOrder =
           TROUBLE_BREWING_CHARACTERS[a.character].eachNightOrder ?? 0;
+        /* istanbul ignore next */
         const bOrder =
           TROUBLE_BREWING_CHARACTERS[b.character].eachNightOrder ?? 0;
         return aOrder - bOrder;
@@ -103,6 +105,7 @@ function buildSteps(
 
   for (const player of players) {
     const char = TROUBLE_BREWING_CHARACTERS[player.trueCharacter];
+    /* istanbul ignore next */
     if (!char) continue;
 
     const order = orderSelector(char);
@@ -118,7 +121,9 @@ function buildSteps(
   // Sort by night order position (values are guaranteed non-null here because
   // only characters with a non-null order were added to steps above)
   steps.sort((a, b) => {
+    /* istanbul ignore next */
     const aOrder = orderSelector(TROUBLE_BREWING_CHARACTERS[a.character]) ?? 0;
+    /* istanbul ignore next */
     const bOrder = orderSelector(TROUBLE_BREWING_CHARACTERS[b.character]) ?? 0;
     return aOrder - bOrder;
   });

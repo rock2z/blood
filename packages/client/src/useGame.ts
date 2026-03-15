@@ -55,6 +55,8 @@ export interface PlayerGrimoire {
   slayerUsed: boolean;
   virginAbilityFired: boolean;
   executedToday: CharacterId | null;
+  /** Night information delivered by the Storyteller to this player tonight */
+  myNightInfo: string | null;
 }
 
 /** Full state snapshot sent to the Storyteller */

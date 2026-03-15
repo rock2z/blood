@@ -10,8 +10,12 @@
  */
 
 import { handleMessage, sendSnapshot, ClientSocket } from "../handler";
-import { createRoom } from "../room";
-import { StorytellerSnapshot, PlayerSnapshot } from "../stateFilter";
+import { createRoom, broadcast } from "../room";
+import {
+  StorytellerSnapshot,
+  PlayerSnapshot,
+  buildSnapshot,
+} from "../stateFilter";
 import { Player } from "@botc/engine";
 
 // ============================================================
@@ -644,5 +648,88 @@ describe("malformed message", () => {
       type: "error",
       payload: "Message must be an object",
     });
+  });
+});
+
+// ============================================================
+// broadcast utility (room.ts)
+// ============================================================
+
+describe("broadcast utility", () => {
+  test("message reaches all open clients in the room", () => {
+    const room = createRoom("test");
+    const c1 = makeMockClient("test", "player", "p1");
+    const c2 = makeMockClient("test", "player", "p2");
+    const c3 = makeMockClient("test", "storyteller");
+    room.clients.add(c1);
+    room.clients.add(c2);
+    room.clients.add(c3);
+
+    broadcast(room, { type: "hello", payload: 42 });
+
+    expect(lastMsg(c1)).toEqual({ type: "hello", payload: 42 });
+    expect(lastMsg(c2)).toEqual({ type: "hello", payload: 42 });
+    expect(lastMsg(c3)).toEqual({ type: "hello", payload: 42 });
+  });
+
+  test("closed client (readyState !== OPEN) does not receive the broadcast", () => {
+    const room = createRoom("test");
+    const openClient = makeMockClient("test", "player", "p1");
+    const closedClient = makeMockClient("test", "player", "p2");
+    (closedClient as unknown as { readyState: number }).readyState = 3; // CLOSED
+    room.clients.add(openClient);
+    room.clients.add(closedClient);
+
+    broadcast(room, { type: "hello", payload: 99 });
+
+    expect(lastMsg(openClient)).toEqual({ type: "hello", payload: 99 });
+    expect(closedClient.received).toHaveLength(0);
+  });
+});
+
+// ============================================================
+// stateFilter fallback — unknown playerId (lines 92–97)
+// ============================================================
+
+describe("filterForPlayer fallback", () => {
+  test("unknown playerId falls back to washerwoman/Townsfolk defaults", () => {
+    const room = createRoom("test");
+    handleMessage(
+      makeMockClient("test", "storyteller") as unknown as MockClient,
+      room,
+      { type: "setup-players", payload: makePlayers() },
+    );
+
+    const ghostClient = makeMockClient("test", "player", "nobody");
+    room.clients.add(ghostClient);
+
+    sendSnapshot(ghostClient, room);
+
+    const snap = lastSnapshot(ghostClient) as PlayerSnapshot;
+    expect(snap.role).toBe("player");
+    expect(snap.grimoire.myTrueCharacter).toBe("washerwoman");
+    expect(snap.grimoire.myAlignment).toBe("Townsfolk");
+    expect(snap.grimoire.myIsPoisoned).toBe(false);
+    expect(snap.grimoire.myDemonBluffs).toBeNull();
+  });
+});
+
+// ============================================================
+// buildSnapshot — undefined playerId (line 151)
+// ============================================================
+
+describe("buildSnapshot with undefined playerId", () => {
+  test("role=player with no playerId returns a PlayerSnapshot with fallback defaults", () => {
+    const room = createRoom("test");
+    handleMessage(
+      makeMockClient("test", "storyteller") as unknown as MockClient,
+      room,
+      { type: "setup-players", payload: makePlayers() },
+    );
+
+    const snap = buildSnapshot(room.state, "player", undefined);
+    expect(snap.role).toBe("player");
+    const playerSnap = snap as PlayerSnapshot;
+    expect(playerSnap.grimoire.myTrueCharacter).toBe("washerwoman");
   });
 });

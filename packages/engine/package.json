@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "description": "Blood on the Clocktower game engine — pure rules, no I/O",
   "main": "dist/index.js",
+  "module": "dist/esm/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc -p tsconfig.esm.json",
     "test": "jest --coverage",
     "typecheck": "tsc --noEmit"
   },

@@ -164,6 +164,12 @@ export interface GameState {
    * Night resolution is paused; dispatch "storyteller-choose-minion" to continue.
    */
   pendingMinionPromotion: boolean;
+  /**
+   * Night information delivered by the Storyteller to specific players.
+   * Maps player ID → the info string shown to that player tonight.
+   * Cleared at the start of each new night and at dawn (resolve-night).
+   */
+  nightInfo: Partial<Record<PlayerId, string>>;
 }
 
 // ============================================================

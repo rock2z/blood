@@ -42,6 +42,8 @@ export interface PlayerGrimoire {
   slayerUsed: boolean;
   virginAbilityFired: boolean;
   executedToday: CharacterId | null;
+  /** Night information delivered by the Storyteller to this player tonight */
+  myNightInfo: string | null;
 }
 
 /** The full state snapshot sent to the Storyteller */
@@ -94,6 +96,9 @@ export function filterForPlayer(
   const myIsPoisoned = me?.isPoisoned ?? false;
   const myIsDrunk = me?.isDrunk ?? false;
 
+  // Night info delivered by the Storyteller to this specific player
+  const myNightInfo = state.nightInfo[playerId] ?? null;
+
   // Demon bluffs only visible to the Imp player
   const isImp = me?.trueCharacter === "imp";
   const myDemonBluffs = isImp ? grimoire.demonBluffs : null;
@@ -129,6 +134,7 @@ export function filterForPlayer(
       slayerUsed: grimoire.slayerUsed,
       virginAbilityFired: grimoire.virginAbilityFired,
       executedToday: grimoire.executedToday,
+      myNightInfo,
     },
   };
 }
