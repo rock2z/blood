@@ -1,0 +1,16 @@
+# IDE
+.idea/
+.vscode/
+*.iws
+*.iml
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+node_modules/
+dist/
+coverage/
+
+# GitHub token for gh CLI — create this file locally, never commit it
+.claude/github_token

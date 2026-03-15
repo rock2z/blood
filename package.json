@@ -1,0 +1,34 @@
+{
+  "name": "botc",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -ws --if-present",
+    "test": "npm run test -ws --if-present",
+    "typecheck": "npm run typecheck -ws --if-present",
+    "lint": "eslint 'packages/*/src/**/*.{ts,tsx}'",
+    "lint:fix": "eslint 'packages/*/src/**/*.{ts,tsx}' --fix",
+    "format": "prettier --write 'packages/*/src/**/*.{ts,tsx}' 'alignment/**/*.md'",
+    "format:check": "prettier --check 'packages/*/src/**/*.{ts,tsx}' 'alignment/**/*.md'",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "typescript-eslint": "^8.0.0",
+    "eslint": "^9.0.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0"
+  },
+  "lint-staged": {
+    "packages/*/src/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "alignment/**/*.md": [
+      "prettier --write"
+    ]
+  }
+}
