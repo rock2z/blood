@@ -280,33 +280,43 @@ function PhaseBar({
       <strong>Day:</strong> {day}
       {winner && (
         <span
-          style={{ color: winner === "good" ? "blue" : "red", marginLeft: 12 }}
+          style={{
+            display: "inline-block",
+            marginLeft: 12,
+            padding: "2px 12px",
+            background: winner === "good" ? "#1890ff" : "#cf1322",
+            color: "white",
+            fontWeight: "bold",
+            borderRadius: 4,
+          }}
         >
-          🏆 {winner.toUpperCase()} WINS
+          🏆 {winner.toUpperCase()} WINS — Game Over
         </span>
       )}
-      <div style={{ marginTop: 8 }}>
-        {(phase === "first-night" || phase === "night") &&
-          !state.pendingRavenkeeperChoice &&
-          !state.pendingMinionPromotion && (
-            <button onClick={() => dispatch({ type: "resolve-night" })}>
-              Resolve Night (→ Day {day + 1})
-            </button>
+      {!winner && (
+        <div style={{ marginTop: 8 }}>
+          {(phase === "first-night" || phase === "night") &&
+            !state.pendingRavenkeeperChoice &&
+            !state.pendingMinionPromotion && (
+              <button onClick={() => dispatch({ type: "resolve-night" })}>
+                Resolve Night (→ Day {day + 1})
+              </button>
+            )}
+          {phase === "day" && (
+            <>
+              <button onClick={() => dispatch({ type: "skip-execution" })}>
+                End Day (No Execution)
+              </button>
+              <button
+                style={{ marginLeft: 8 }}
+                onClick={() => dispatch({ type: "advance-to-night" })}
+              >
+                Advance to Night
+              </button>
+            </>
           )}
-        {phase === "day" && (
-          <>
-            <button onClick={() => dispatch({ type: "skip-execution" })}>
-              End Day (No Execution)
-            </button>
-            <button
-              style={{ marginLeft: 8 }}
-              onClick={() => dispatch({ type: "advance-to-night" })}
-            >
-              Advance to Night
-            </button>
-          </>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -738,12 +748,12 @@ function NightStepCard({
         </div>
       )}
 
-      {/* Fortune Teller answer (no dispatch — Storyteller reads grimoire) */}
-      {step.character === "fortuneteller" && !needsDispatch && !done && (
-        <div style={{ marginLeft: 20, fontSize: 12, color: "#555" }}>
-          Check grimoire: nod if either picked player is the Demon or the red
-          herring ({state.grimoire.fortuneTellerRedHerring ?? "not set"}).
-        </div>
+      {/* Fortune Teller answer: pick 2 players, auto-calculate yes/no */}
+      {step.character === "fortuneteller" && !done && (
+        <FortuneTellerHelper
+          state={state}
+          toggleDone={() => toggleDone(stepKey)}
+        />
       )}
 
       {/* Info delivery: send the Storyteller-composed info string to the player */}
@@ -785,6 +795,97 @@ function NightStepCard({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ============================================================
+// Fortune Teller helper — pick 2 players, auto-show YES/NO answer
+// ============================================================
+
+function FortuneTellerHelper({
+  state,
+  toggleDone,
+}: {
+  state: GameState;
+  toggleDone: () => void;
+}): React.ReactElement {
+  const allPlayers = state.grimoire.players;
+  const [pick1, setPick1] = useState(allPlayers[0]?.id ?? "");
+  const [pick2, setPick2] = useState(allPlayers[1]?.id ?? "");
+
+  const redHerring = state.grimoire.fortuneTellerRedHerring;
+  const isYes = [pick1, pick2].some((id) => {
+    const p = allPlayers.find((pl) => pl.id === id);
+    return p?.trueCharacter === "imp" || p?.id === redHerring;
+  });
+
+  return (
+    <div
+      style={{
+        marginLeft: 20,
+        marginTop: 6,
+        padding: "6px 8px",
+        background: "#f0f5ff",
+        border: "1px solid #adc6ff",
+        borderRadius: 4,
+      }}
+    >
+      <div style={{ fontSize: 12, fontWeight: "bold", marginBottom: 4 }}>
+        Fortune Teller checks 2 players
+      </div>
+      <div
+        style={{
+          display: "flex",
+          gap: 6,
+          flexWrap: "wrap",
+          alignItems: "center",
+        }}
+      >
+        <select
+          value={pick1}
+          onChange={(e) => setPick1(e.target.value)}
+          style={{ fontSize: 12 }}
+        >
+          {allPlayers.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <span style={{ fontSize: 12 }}>&amp;</span>
+        <select
+          value={pick2}
+          onChange={(e) => setPick2(e.target.value)}
+          style={{ fontSize: 12 }}
+        >
+          {allPlayers.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <span
+          style={{
+            fontSize: 13,
+            fontWeight: "bold",
+            padding: "2px 8px",
+            borderRadius: 4,
+            background: isYes ? "#f6ffed" : "#fff1f0",
+            color: isYes ? "#389e0d" : "#cf1322",
+            border: `1px solid ${isYes ? "#b7eb8f" : "#ffa39e"}`,
+          }}
+        >
+          Answer: {isYes ? "YES" : "NO"}
+        </span>
+        <button onClick={toggleDone} style={{ fontSize: 12 }}>
+          ✓ Done
+        </button>
+      </div>
+      <div style={{ fontSize: 11, color: "#666", marginTop: 4 }}>
+        Red herring: {redHerring ?? "—"} &nbsp;|&nbsp; YES if either pick is the
+        Demon or red herring
+      </div>
     </div>
   );
 }
@@ -983,9 +1084,9 @@ function DayControls({
   state: GameState;
   dispatch: (a: Action) => void;
 }): React.ReactElement {
-  const { phase, grimoire, voting, executionCandidateId } = state;
+  const { phase, grimoire, voting, executionCandidateId, winner } = state;
 
-  if (phase !== "day") return <></>;
+  if (phase !== "day" || winner) return <></>;
 
   const alive = grimoire.players.filter((p) => p.isAlive);
 

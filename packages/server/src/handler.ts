@@ -23,6 +23,8 @@ import {
   createGameState,
   selectDemonBluffs,
   selectFortuneTellerRedHerring,
+  findDrunkFakeCharacter,
+  TB_BY_ALIGNMENT,
 } from "@botc/engine";
 import { Room } from "./room";
 import {
@@ -71,13 +73,28 @@ export function handleMessage(
     case "setup-players": {
       // Reinitialize the room's game state with a new player list
       const players = payload as Player[];
-      const baseState = createGameState(players);
+
+      // If the Drunk is in play, assign them a fake Townsfolk perceivedCharacter
+      const inPlayIds = players.map((p) => p.trueCharacter);
+      const drunkFakeCharacter = findDrunkFakeCharacter(
+        inPlayIds,
+        TB_BY_ALIGNMENT.townsfolk,
+      );
+      const patchedPlayers = drunkFakeCharacter
+        ? players.map((p) =>
+            p.trueCharacter === "drunk"
+              ? { ...p, perceivedCharacter: drunkFakeCharacter }
+              : p,
+          )
+        : players;
+
+      const baseState = createGameState(patchedPlayers);
 
       // Derive game-start values that depend on the full player set
-      const inPlayIds = players.map((p) => p.trueCharacter);
       const demonBluffs =
         players.length >= 7 ? selectDemonBluffs(inPlayIds) : [];
-      const fortuneTellerRedHerring = selectFortuneTellerRedHerring(players);
+      const fortuneTellerRedHerring =
+        selectFortuneTellerRedHerring(patchedPlayers);
 
       room.state = {
         ...baseState,

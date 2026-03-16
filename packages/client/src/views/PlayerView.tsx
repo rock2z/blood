@@ -325,6 +325,7 @@ function VoteButtons({
   dispatch: (a: Action) => void;
 }): React.ReactElement {
   if (!playerId) return <></>;
+  if (state.winner) return <></>;
   const { voting } = state;
   if (!voting) return <></>;
 

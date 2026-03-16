@@ -391,8 +391,12 @@ function handleNightChoice(
   let { grimoire } = state;
 
   if (char === "monk") {
-    if (action.targetIds[0]) {
-      grimoire = applyMonkProtection(grimoire, action.targetIds[0]);
+    const targetId = action.targetIds[0];
+    if (targetId) {
+      if (targetId === action.playerId) {
+        throw new Error("Monk cannot protect themselves");
+      }
+      grimoire = applyMonkProtection(grimoire, targetId);
     }
   } else if (char === "poisoner") {
     if (action.targetIds[0]) {
@@ -401,7 +405,15 @@ function handleNightChoice(
   } else if (char === "imp") {
     grimoire = { ...grimoire, impTarget: action.targetIds[0] ?? null };
   } else if (char === "butler") {
-    grimoire = { ...grimoire, butlerMaster: action.targetIds[0] ?? null };
+    const targetId = action.targetIds[0];
+    if (targetId) {
+      if (targetId === action.playerId) {
+        throw new Error("Butler cannot choose themselves as master");
+      }
+      grimoire = { ...grimoire, butlerMaster: targetId };
+    } else {
+      grimoire = { ...grimoire, butlerMaster: null };
+    }
   }
   // Other characters: Storyteller handles info delivery externally
 
@@ -722,6 +734,18 @@ function handleSkipExecution(state: GameState): GameState {
     return {
       ...state,
       winner: "good",
+      phase: "game-over",
+      executionCandidateId: null,
+      executionCandidateVotes: 0,
+    };
+  }
+
+  // Check general win conditions (e.g. evil wins when ≤2 players are alive)
+  const winner = checkWinCondition(state.grimoire);
+  if (winner) {
+    return {
+      ...state,
+      winner,
       phase: "game-over",
       executionCandidateId: null,
       executionCandidateVotes: 0,

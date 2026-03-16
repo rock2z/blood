@@ -31,7 +31,7 @@ All 22 characters documented with:
 - Voting: `threshold = ceil(alive / 2)`. Ghost votes (dead players) count toward YES tally but NOT toward threshold denominator. Ties → **no execution** (both candidates cancel each other out).
 - Voting order: clockwise from the player immediately clockwise of the **nominated** player; nominated player votes **last**.
 - Execution: majority vote, one per day; win condition checked **immediately at moment of death** (not at end of day).
-- Win conditions: Demon dead → good wins; 3 players alive + no execution today + Mayor alive and healthy → good wins; Saint executed → evil wins.
+- Win conditions: Demon dead → good wins; 3 players alive + no execution today + Mayor alive and healthy → good wins; Saint executed → evil wins; **2 or fewer players alive (with Demon still living) → evil wins**.
 - Player states: alive, dead, ghostVoteUsed, poisoned, drunk, protected
 - Baron modifier: −2 Townsfolk +2 Outsiders at setup (permanent)
 - Demon bluffs: 3 good characters not in play, given to Imp on night 1 (7+ players only)

@@ -157,7 +157,12 @@ export function killPlayer(
 // ============================================================
 
 /**
- * Check the primary win condition: good wins when no Demon is alive.
+ * Check the primary win conditions.
+ *
+ * - Good wins when no Demon is alive.
+ * - Evil wins when only 2 (or fewer) players are alive — the good team can
+ *   no longer execute effectively when only the Demon and one other player
+ *   remain.
  *
  * NOTE: The Mayor 3-player win is a DAY-END condition checked exclusively
  * in handleSkipExecution — it is intentionally NOT checked here to avoid
@@ -169,6 +174,9 @@ export function checkWinCondition(grimoire: Grimoire): WinningTeam {
   // Good wins if no Demon is alive
   const demonAlive = alive.some((p) => p.alignment === "Demon");
   if (!demonAlive) return "good";
+
+  // Evil wins if only 2 or fewer players are alive
+  if (alive.length <= 2) return "evil";
 
   return null;
 }
