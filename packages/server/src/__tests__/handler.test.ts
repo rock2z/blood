@@ -757,6 +757,40 @@ describe("action → broadcast", () => {
     expect(msg.type).toBe("error");
     expect(String(msg.payload)).toContain("Player bob is not the Slayer");
   });
+
+  test("player vote action is identity-bound (forged playerId is ignored)", () => {
+    const room = createRoom("test");
+    const stClient = makeMockClient("test", "storyteller");
+    const bobClient = makeMockClient("test", "player", "bob");
+    room.clients.add(stClient);
+    room.clients.add(bobClient);
+
+    handleMessage(stClient, room, {
+      type: "setup-players",
+      payload: makePlayers(),
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "start-game" },
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "resolve-night" },
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "nominate", nominatorId: "bob", targetId: "alice" },
+    });
+
+    // bob tries to spoof eve's vote.
+    handleMessage(bobClient, room, {
+      type: "action",
+      payload: { type: "vote", playerId: "eve", vote: true },
+    });
+
+    expect(room.state.voting?.votes.bob).toBe(true);
+    expect(room.state.voting?.votes.eve).toBeUndefined();
+  });
 });
 
 // ============================================================
