@@ -10,15 +10,14 @@
  */
 
 import React, { useState } from "react";
-import { Action, CharacterId } from "@botc/engine";
+import { Action, TB_BY_ALIGNMENT } from "@botc/engine";
 import { PlayerSnapshot, PublicPlayer, SendFn } from "../useGame";
 
-const EVIL_CHARACTERS = new Set<CharacterId>([
-  "imp",
-  "poisoner",
-  "spy",
-  "scarletwoman",
-  "baron",
+// Keep in sync with engine character data by deriving from TB_BY_ALIGNMENT
+// (packages/engine/src/data/troubleBrewing.ts) rather than hardcoding IDs.
+const EVIL_CHARACTERS = new Set([
+  ...TB_BY_ALIGNMENT.minions,
+  ...TB_BY_ALIGNMENT.demons,
 ]);
 
 interface Props {
