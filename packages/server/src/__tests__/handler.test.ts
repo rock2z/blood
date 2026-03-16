@@ -189,7 +189,7 @@ describe("identify", () => {
     const snap = lastSnapshot(client) as PlayerSnapshot;
     expect(snap.role).toBe("player");
     expect(snap.grimoire).toBeDefined();
-    expect(snap.grimoire.myTrueCharacter).toBe("empath");
+    expect(snap.grimoire.myCharacter).toBe("empath");
   });
 
   test("identity is updated on the socket after identify", () => {
@@ -345,6 +345,23 @@ describe("setup-players", () => {
       .map((p) => p.id);
     expect(goodPlayerIds).toContain(redHerring);
   });
+
+  test("non-storyteller cannot run setup-players", () => {
+    const room = createRoom("test");
+    const playerClient = makeMockClient("test", "player", "bob");
+    room.clients.add(playerClient);
+
+    handleMessage(playerClient, room, {
+      type: "setup-players",
+      payload: makePlayers(),
+    });
+
+    expect(lastMsg(playerClient)).toEqual({
+      type: "error",
+      payload: 'Message "setup-players" is restricted to the Storyteller',
+    });
+    expect(room.state.grimoire.players).toHaveLength(0);
+  });
 });
 
 // ============================================================
@@ -417,7 +434,7 @@ describe("Player receives filtered state", () => {
     expect(publicPlayerKeys).not.toContain("isPoisoned");
   });
 
-  test("player snapshot includes their own true character", () => {
+  test("player snapshot includes only perceived self-character", () => {
     const room = setupRoom();
     const bobClient = makeMockClient("test", "player", "bob");
     room.clients.add(bobClient);
@@ -425,8 +442,10 @@ describe("Player receives filtered state", () => {
     sendSnapshot(bobClient, room);
 
     const snap = lastSnapshot(bobClient) as PlayerSnapshot;
-    expect(snap.grimoire.myTrueCharacter).toBe("empath");
-    expect(snap.grimoire.myAlignment).toBe("Townsfolk");
+    expect(snap.grimoire.myCharacter).toBe("empath");
+    expect(snap.grimoire).not.toHaveProperty("myTrueCharacter");
+    expect(snap.grimoire).not.toHaveProperty("myIsPoisoned");
+    expect(snap.grimoire).not.toHaveProperty("myIsDrunk");
   });
 
   test("Imp player receives demonBluffs", () => {
@@ -538,8 +557,8 @@ describe("broadcastSnapshots", () => {
     const bobSnap = lastSnapshot(bobClient) as PlayerSnapshot;
     const eveSnap = lastSnapshot(eveClient) as PlayerSnapshot;
 
-    expect(bobSnap.grimoire.myTrueCharacter).toBe("empath");
-    expect(eveSnap.grimoire.myTrueCharacter).toBe("mayor");
+    expect(bobSnap.grimoire.myCharacter).toBe("empath");
+    expect(eveSnap.grimoire.myCharacter).toBe("mayor");
   });
 
   test("disconnected clients (readyState !== OPEN) are skipped", () => {
@@ -610,6 +629,42 @@ describe("action → broadcast", () => {
     expect(stLast.type).toBe("error");
     // Player should not have received anything
     expect(plClient.received).toHaveLength(0);
+  });
+
+  test.each([
+    "start-game",
+    "resolve-night",
+    "advance-to-night",
+    "execute",
+    "skip-execution",
+  ])("non-storyteller is blocked from storyteller action %s", (actionType) => {
+    const room = createRoom("test");
+    const stClient = makeMockClient("test", "storyteller");
+    const plClient = makeMockClient("test", "player", "bob");
+    room.clients.add(stClient);
+    room.clients.add(plClient);
+
+    handleMessage(stClient, room, {
+      type: "setup-players",
+      payload: makePlayers(),
+    });
+    plClient.received.length = 0;
+
+    const action =
+      actionType === "execute"
+        ? ({ type: "execute", targetId: "eve" } as const)
+        : ({ type: actionType } as { type: string });
+
+    handleMessage(plClient, room, {
+      type: "action",
+      payload: action,
+    });
+
+    const msg = lastMsg(plClient);
+    expect(msg.type).toBe("error");
+    expect(String(msg.payload)).toContain(
+      `Action "${actionType}" is restricted to the Storyteller`,
+    );
   });
 });
 
@@ -692,7 +747,7 @@ describe("broadcast utility", () => {
 // ============================================================
 
 describe("filterForPlayer fallback", () => {
-  test("unknown playerId falls back to washerwoman/Townsfolk defaults", () => {
+  test("unknown playerId falls back to washerwoman defaults", () => {
     const room = createRoom("test");
     handleMessage(
       makeMockClient("test", "storyteller") as unknown as MockClient,
@@ -707,9 +762,7 @@ describe("filterForPlayer fallback", () => {
 
     const snap = lastSnapshot(ghostClient) as PlayerSnapshot;
     expect(snap.role).toBe("player");
-    expect(snap.grimoire.myTrueCharacter).toBe("washerwoman");
-    expect(snap.grimoire.myAlignment).toBe("Townsfolk");
-    expect(snap.grimoire.myIsPoisoned).toBe(false);
+    expect(snap.grimoire.myCharacter).toBe("washerwoman");
     expect(snap.grimoire.myDemonBluffs).toBeNull();
   });
 });
@@ -730,6 +783,6 @@ describe("buildSnapshot with undefined playerId", () => {
     const snap = buildSnapshot(room.state, "player", undefined);
     expect(snap.role).toBe("player");
     const playerSnap = snap as PlayerSnapshot;
-    expect(playerSnap.grimoire.myTrueCharacter).toBe("washerwoman");
+    expect(playerSnap.grimoire.myCharacter).toBe("washerwoman");
   });
 });

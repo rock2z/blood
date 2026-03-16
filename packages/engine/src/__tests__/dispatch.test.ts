@@ -522,8 +522,8 @@ describe("resolve-night — Imp self-kill (Minion promotion)", () => {
   });
 });
 
-describe("resolve-night — Monk protecting Imp blocks self-kill", () => {
-  test("Monk protecting Imp: self-kill is prevented, Imp stays alive", () => {
+describe("resolve-night — Monk protecting Imp does not block self-kill", () => {
+  test("Monk protecting Imp: self-kill still resolves via Imp self-kill logic", () => {
     const players = [
       makePlayer({
         id: "imp",
@@ -549,9 +549,37 @@ describe("resolve-night — Monk protecting Imp blocks self-kill", () => {
     });
     s = dispatch(s, { type: "resolve-night" });
 
-    expect(s.grimoire.players.find((p) => p.id === "imp")!.isAlive).toBe(true);
-    expect(s.phase).toBe("day");
-    expect(s.winner).toBeNull();
+    expect(s.grimoire.players.find((p) => p.id === "imp")!.isAlive).toBe(false);
+    expect(s.phase).toBe("game-over");
+    expect(s.winner).toBe("good");
+  });
+
+  test("self-kill is not blocked by stale protection flag on current Imp", () => {
+    const players = [
+      makePlayer({
+        id: "new-imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        isProtected: true,
+        seatIndex: 0,
+      }),
+      makePlayer({ id: "p1", seatIndex: 1 }),
+      makePlayer({ id: "p2", seatIndex: 2 }),
+    ];
+
+    let s = dayState(players);
+    s = dispatch(s, { type: "advance-to-night" });
+    s = dispatch(s, {
+      type: "night-choice",
+      playerId: "new-imp",
+      targetIds: ["new-imp"],
+    });
+    s = dispatch(s, { type: "resolve-night" });
+
+    expect(s.grimoire.players.find((p) => p.id === "new-imp")!.isAlive).toBe(
+      false,
+    );
+    expect(s.winner).toBe("good");
   });
 });
 
@@ -2071,6 +2099,35 @@ describe("night-choice — throws outside night phase", () => {
         targetIds: ["p1"],
       }),
     ).toThrow(/night phase/);
+  });
+
+  test("dead player cannot submit night-choice", () => {
+    const players = [
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 0,
+      }),
+      makePlayer({
+        id: "poisoner",
+        trueCharacter: "poisoner",
+        alignment: "Minion",
+        isAlive: false,
+        seatIndex: 1,
+      }),
+      makePlayer({ id: "p1", seatIndex: 2 }),
+      makePlayer({ id: "p2", seatIndex: 3 }),
+    ];
+    const s = dispatch(dayState(players), { type: "advance-to-night" });
+
+    expect(() =>
+      dispatch(s, {
+        type: "night-choice",
+        playerId: "poisoner",
+        targetIds: ["p1"],
+      }),
+    ).toThrow("Dead players cannot act at night");
   });
 });
 
