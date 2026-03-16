@@ -10,13 +10,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  GameState,
-  Action,
-  CharacterId,
-  Alignment,
-  PlayerId,
-} from "@botc/engine";
+import { GameState, Action, CharacterId, PlayerId } from "@botc/engine";
 
 export type SendFn = (msg: ClientMessage) => void;
 
@@ -45,11 +39,7 @@ export interface PublicPlayer {
 /** Private + public grimoire data sent to a regular player */
 export interface PlayerGrimoire {
   players: PublicPlayer[];
-  myTrueCharacter: CharacterId;
-  myPerceivedCharacter: CharacterId;
-  myAlignment: Alignment;
-  myIsPoisoned: boolean;
-  myIsDrunk: boolean;
+  myCharacter: CharacterId;
   /** Non-null only for the Imp player */
   myDemonBluffs: CharacterId[] | null;
   slayerUsed: boolean;

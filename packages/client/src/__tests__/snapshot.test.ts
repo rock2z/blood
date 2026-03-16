@@ -69,11 +69,7 @@ function makePlayerGrimoire(
 ): PlayerGrimoire {
   return {
     players: [ALICE_PUBLIC],
-    myTrueCharacter: "empath",
-    myPerceivedCharacter: "empath",
-    myAlignment: "Townsfolk",
-    myIsPoisoned: false,
-    myIsDrunk: false,
+    myCharacter: "empath",
     myDemonBluffs: null,
     slayerUsed: false,
     virginAbilityFired: false,
@@ -146,11 +142,9 @@ describe("StateSnapshot discriminated union", () => {
 // ============================================================
 
 describe("PlayerSnapshot private info", () => {
-  test("grimoire contains own character fields", () => {
+  test("grimoire contains perceived self-character field", () => {
     const snap = makePlayerSnapshot();
-    expect(snap.grimoire.myTrueCharacter).toBe("empath");
-    expect(snap.grimoire.myPerceivedCharacter).toBe("empath");
-    expect(snap.grimoire.myAlignment).toBe("Townsfolk");
+    expect(snap.grimoire.myCharacter).toBe("empath");
   });
 
   test("grimoire.players contains only PublicPlayer fields (no trueCharacter)", () => {
@@ -169,8 +163,7 @@ describe("PlayerSnapshot private info", () => {
   test("Imp player receives demon bluffs; non-Imp receives null", () => {
     const impSnap = makePlayerSnapshot({
       grimoire: makePlayerGrimoire({
-        myTrueCharacter: "imp",
-        myAlignment: "Demon",
+        myCharacter: "imp",
         myDemonBluffs: ["washerwoman", "chef", "librarian"],
       }),
     });
@@ -180,26 +173,22 @@ describe("PlayerSnapshot private info", () => {
     expect(nonImpSnap.grimoire.myDemonBluffs).toBeNull();
   });
 
-  test("poisoned/drunk flags are exposed to the player", () => {
+  test("poisoned/drunk flags are NOT exposed to the player", () => {
     const snap = makePlayerSnapshot({
-      grimoire: makePlayerGrimoire({ myIsPoisoned: true, myIsDrunk: false }),
+      grimoire: makePlayerGrimoire(),
     });
-    expect(snap.grimoire.myIsPoisoned).toBe(true);
-    expect(snap.grimoire.myIsDrunk).toBe(false);
+    expect(snap.grimoire).not.toHaveProperty("myIsPoisoned");
+    expect(snap.grimoire).not.toHaveProperty("myIsDrunk");
   });
 
-  test("Drunk player sees perceived (fake) character, not true character", () => {
+  test("Drunk player sees only perceived (fake) character", () => {
     const snap = makePlayerSnapshot({
       grimoire: makePlayerGrimoire({
-        myTrueCharacter: "drunk",
-        myPerceivedCharacter: "chef", // the fake townsfolk token
-        myAlignment: "Outsider",
-        myIsDrunk: true,
+        myCharacter: "chef", // the fake townsfolk token
       }),
     });
-    expect(snap.grimoire.myTrueCharacter).toBe("drunk");
-    expect(snap.grimoire.myPerceivedCharacter).toBe("chef");
-    expect(snap.grimoire.myIsDrunk).toBe(true);
+    expect(snap.grimoire.myCharacter).toBe("chef");
+    expect(snap.grimoire).not.toHaveProperty("myTrueCharacter");
   });
 });
 
