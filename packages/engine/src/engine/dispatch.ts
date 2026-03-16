@@ -386,10 +386,13 @@ function handleNightChoice(
   }
 
   const player = getPlayer(state.grimoire, action.playerId);
-  if (!player.isAlive) {
-    throw new Error("Dead players cannot act at night");
-  }
   const char = player.trueCharacter;
+
+  // Dead players can still act for certain abilities, but a dead Imp must not
+  // submit Demon kill targets.
+  if (!player.isAlive && char === "imp") {
+    throw new Error("Dead Imp cannot act at night");
+  }
 
   // Poisoned/drunk players: ability has no effect (but still accepted to avoid
   // revealing their status). For Butler the master is still recorded.

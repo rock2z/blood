@@ -2101,7 +2101,7 @@ describe("night-choice — throws outside night phase", () => {
     ).toThrow(/night phase/);
   });
 
-  test("dead player cannot submit night-choice", () => {
+  test("dead player can submit night-choice (dead players keep abilities)", () => {
     const players = [
       makePlayer({
         id: "imp",
@@ -2121,13 +2121,46 @@ describe("night-choice — throws outside night phase", () => {
     ];
     const s = dispatch(dayState(players), { type: "advance-to-night" });
 
+    const next = dispatch(s, {
+      type: "night-choice",
+      playerId: "poisoner",
+      targetIds: ["p1"],
+    });
+    expect(next.grimoire.poisonerTarget).toBe("p1");
+    expect(next.grimoire.players.find((p) => p.id === "p1")?.isPoisoned).toBe(
+      true,
+    );
+  });
+
+  test("dead Imp cannot submit night-choice", () => {
+    const players = [
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        isAlive: false,
+        seatIndex: 0,
+      }),
+      // Keep at least one living Demon-aligned player so the game can enter day/night
+      // phases for this validation scenario.
+      makePlayer({
+        id: "other-demon",
+        trueCharacter: "scarletwoman",
+        alignment: "Demon",
+        seatIndex: 1,
+      }),
+      makePlayer({ id: "p1", seatIndex: 2 }),
+      makePlayer({ id: "p2", seatIndex: 3 }),
+    ];
+    const s = dispatch(dayState(players), { type: "advance-to-night" });
+
     expect(() =>
       dispatch(s, {
         type: "night-choice",
-        playerId: "poisoner",
+        playerId: "imp",
         targetIds: ["p1"],
       }),
-    ).toThrow("Dead players cannot act at night");
+    ).toThrow("Dead Imp cannot act at night");
   });
 });
 

@@ -666,6 +666,219 @@ describe("action → broadcast", () => {
       `Action "${actionType}" is restricted to the Storyteller`,
     );
   });
+
+  test("player nominate action is identity-bound (forged nominatorId is ignored)", () => {
+    const room = createRoom("test");
+    const stClient = makeMockClient("test", "storyteller");
+    const bobClient = makeMockClient("test", "player", "bob");
+    room.clients.add(stClient);
+    room.clients.add(bobClient);
+
+    handleMessage(stClient, room, {
+      type: "setup-players",
+      payload: makePlayers(),
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "start-game" },
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "resolve-night" },
+    });
+
+    handleMessage(bobClient, room, {
+      type: "action",
+      payload: { type: "nominate", nominatorId: "eve", targetId: "alice" },
+    });
+
+    expect(room.state.voting?.nominatorId).toBe("bob");
+  });
+
+  test("player night-choice action is identity-bound (forged playerId is ignored)", () => {
+    const room = createRoom("test");
+    const stClient = makeMockClient("test", "storyteller");
+    const bobClient = makeMockClient("test", "player", "bob");
+    room.clients.add(stClient);
+    room.clients.add(bobClient);
+
+    handleMessage(stClient, room, {
+      type: "setup-players",
+      payload: makePlayers(),
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "start-game" },
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "resolve-night" },
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "advance-to-night" },
+    });
+
+    // bob (Empath) attempts to spoof Imp action as alice
+    handleMessage(bobClient, room, {
+      type: "action",
+      payload: { type: "night-choice", playerId: "alice", targetIds: ["eve"] },
+    });
+
+    expect(room.state.grimoire.impTarget).toBeNull();
+  });
+
+  test("player slayer-shoot action is identity-bound", () => {
+    const room = createRoom("test");
+    const stClient = makeMockClient("test", "storyteller");
+    const bobClient = makeMockClient("test", "player", "bob");
+    room.clients.add(stClient);
+    room.clients.add(bobClient);
+
+    handleMessage(stClient, room, {
+      type: "setup-players",
+      payload: makePlayers(),
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "start-game" },
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "resolve-night" },
+    });
+
+    handleMessage(bobClient, room, {
+      type: "action",
+      payload: { type: "slayer-shoot", slayerId: "eve", targetId: "alice" },
+    });
+
+    const msg = lastMsg(bobClient);
+    expect(msg.type).toBe("error");
+    expect(String(msg.payload)).toContain("Player bob is not the Slayer");
+  });
+
+  test("player vote action is identity-bound (forged playerId is ignored)", () => {
+    const room = createRoom("test");
+    const stClient = makeMockClient("test", "storyteller");
+    const bobClient = makeMockClient("test", "player", "bob");
+    room.clients.add(stClient);
+    room.clients.add(bobClient);
+
+    handleMessage(stClient, room, {
+      type: "setup-players",
+      payload: makePlayers(),
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "start-game" },
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "resolve-night" },
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "nominate", nominatorId: "bob", targetId: "alice" },
+    });
+
+    // bob tries to spoof eve's vote.
+    handleMessage(bobClient, room, {
+      type: "action",
+      payload: { type: "vote", playerId: "eve", vote: true },
+    });
+
+    expect(room.state.voting?.votes.bob).toBe(true);
+    expect(room.state.voting?.votes.eve).toBeUndefined();
+  });
+
+  test("storyteller cannot dispatch ravenkeeper-choice", () => {
+    const room = createRoom("test");
+    const stClient = makeMockClient("test", "storyteller");
+    room.clients.add(stClient);
+
+    // Put game into pending Ravenkeeper choice state
+    const players: Player[] = [
+      {
+        id: "imp",
+        name: "Imp",
+        seatIndex: 0,
+        trueCharacter: "imp",
+        perceivedCharacter: "imp",
+        alignment: "Demon",
+        isAlive: true,
+        isPoisoned: false,
+        isDrunk: false,
+        isProtected: false,
+        ghostVoteUsed: false,
+      },
+      {
+        id: "rk",
+        name: "RK",
+        seatIndex: 1,
+        trueCharacter: "ravenkeeper",
+        perceivedCharacter: "ravenkeeper",
+        alignment: "Townsfolk",
+        isAlive: true,
+        isPoisoned: false,
+        isDrunk: false,
+        isProtected: false,
+        ghostVoteUsed: false,
+      },
+      {
+        id: "p1",
+        name: "P1",
+        seatIndex: 2,
+        trueCharacter: "empath",
+        perceivedCharacter: "empath",
+        alignment: "Townsfolk",
+        isAlive: true,
+        isPoisoned: false,
+        isDrunk: false,
+        isProtected: false,
+        ghostVoteUsed: false,
+      },
+    ];
+
+    handleMessage(stClient, room, {
+      type: "setup-players",
+      payload: players,
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "start-game" },
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "resolve-night" },
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "advance-to-night" },
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "night-choice", playerId: "imp", targetIds: ["rk"] },
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "resolve-night" },
+    });
+
+    expect(room.state.pendingRavenkeeperChoice).toBe(true);
+
+    stClient.received.length = 0;
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "ravenkeeper-choice", targetId: "p1" },
+    });
+
+    const msg = lastMsg(stClient);
+    expect(msg.type).toBe("error");
+    expect(String(msg.payload)).toContain(
+      'Action "ravenkeeper-choice" is restricted to the Ravenkeeper player',
+    );
+  });
 });
 
 // ============================================================
