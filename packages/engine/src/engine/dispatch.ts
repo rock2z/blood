@@ -152,6 +152,20 @@ function handleResolveNight(state: GameState): GameState {
     }
 
     if (isSelfKill) {
+      // If the Monk is alive and healthy and protected the Imp this night,
+      // the self-kill is prevented — Imp stays alive, no new Demon created.
+      const monkPlayer = getPlayerByCharacter(grimoire, "monk");
+      const monkEffective =
+        monkPlayer !== undefined &&
+        monkPlayer.isAlive &&
+        !monkPlayer.isPoisoned &&
+        !monkPlayer.isDrunk;
+      const impIsProtected =
+        impPlayer !== undefined && impPlayer.isProtected && monkEffective;
+      if (impIsProtected) {
+        return finaliseNightResolution(currentState);
+      }
+
       // Imp self-kill: try Scarlet Woman first
       const { grimoire: swGrimoire, activated } =
         tryActivateScarletWoman(grimoire);

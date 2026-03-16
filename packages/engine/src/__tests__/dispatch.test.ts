@@ -522,8 +522,8 @@ describe("resolve-night — Imp self-kill (Minion promotion)", () => {
   });
 });
 
-describe("resolve-night — Monk protecting Imp does not block self-kill", () => {
-  test("Monk protecting Imp: self-kill still resolves via Imp self-kill logic", () => {
+describe("resolve-night — Monk protection blocks Imp self-kill", () => {
+  test("Monk protecting Imp: self-kill is blocked, Imp survives, game continues", () => {
     const players = [
       makePlayer({
         id: "imp",
@@ -536,7 +536,7 @@ describe("resolve-night — Monk protecting Imp does not block self-kill", () =>
     ];
     let s = dayState(players);
     s = dispatch(s, { type: "advance-to-night" });
-    // Monk protects Imp; Imp self-targets
+    // Monk protects Imp; Imp self-targets — self-kill should be blocked
     s = dispatch(s, {
       type: "night-choice",
       playerId: "monk",
@@ -549,12 +549,47 @@ describe("resolve-night — Monk protecting Imp does not block self-kill", () =>
     });
     s = dispatch(s, { type: "resolve-night" });
 
+    // Imp should survive; no winner yet
+    expect(s.grimoire.players.find((p) => p.id === "imp")!.isAlive).toBe(true);
+    expect(s.phase).toBe("day");
+    expect(s.winner).toBeNull();
+  });
+
+  test("Poisoned Monk does NOT block Imp self-kill — Imp dies", () => {
+    const players = [
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 0,
+      }),
+      makePlayer({ id: "monk", trueCharacter: "monk", seatIndex: 1 }),
+      makePlayer({ id: "p1", seatIndex: 2 }),
+    ];
+    let s = dayState(players);
+    s = dispatch(s, { type: "advance-to-night" });
+    s = poisonPlayer(s, "monk");
+    s = dispatch(s, {
+      type: "night-choice",
+      playerId: "monk",
+      targetIds: ["imp"],
+    });
+    s = dispatch(s, {
+      type: "night-choice",
+      playerId: "imp",
+      targetIds: ["imp"],
+    });
+    s = dispatch(s, { type: "resolve-night" });
+
+    // Monk is poisoned — self-kill proceeds normally
     expect(s.grimoire.players.find((p) => p.id === "imp")!.isAlive).toBe(false);
     expect(s.phase).toBe("game-over");
     expect(s.winner).toBe("good");
   });
 
-  test("self-kill is not blocked by stale protection flag on current Imp", () => {
+  test("self-kill is not blocked by stale isProtected flag when no Monk is in play", () => {
+    // Imp starts with isProtected: true (stale from a previous night or setup quirk),
+    // but no Monk character is in this game — protection check must require a live Monk.
     const players = [
       makePlayer({
         id: "new-imp",
@@ -576,6 +611,7 @@ describe("resolve-night — Monk protecting Imp does not block self-kill", () =>
     });
     s = dispatch(s, { type: "resolve-night" });
 
+    // No Monk → stale flag is irrelevant → self-kill succeeds
     expect(s.grimoire.players.find((p) => p.id === "new-imp")!.isAlive).toBe(
       false,
     );

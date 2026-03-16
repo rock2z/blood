@@ -10,7 +10,11 @@
  */
 
 import React, { useState } from "react";
-import { Action, TB_BY_ALIGNMENT } from "@botc/engine";
+import {
+  Action,
+  TB_BY_ALIGNMENT,
+  TROUBLE_BREWING_CHARACTERS,
+} from "@botc/engine";
 import { PlayerSnapshot, PublicPlayer, SendFn } from "../useGame";
 
 // Keep in sync with engine character data by deriving from TB_BY_ALIGNMENT
@@ -71,6 +75,11 @@ export function PlayerView({
       {voting && <ActiveVote state={state} />}
 
       <div style={{ marginTop: 16 }}>
+        <NightChoicePanel
+          state={state}
+          playerId={playerId}
+          dispatch={dispatch}
+        />
         <VoteButtons state={state} playerId={playerId} dispatch={dispatch} />
         <NominatePanel state={state} playerId={playerId} dispatch={dispatch} />
         <SlayerPanel state={state} playerId={playerId} dispatch={dispatch} />
@@ -501,6 +510,140 @@ function SlayerPanel({
           }}
         >
           Shoot
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Night choice panel — shown to characters with a night action
+// (Monk, Butler, Poisoner, Imp) so they can submit their target
+// ============================================================
+
+/** Characters that require the player to pick a target each night */
+const NIGHT_ACTION_CHARACTERS = new Set([
+  "monk",
+  "butler",
+  "poisoner",
+  "imp",
+] as const);
+
+function nightChoiceLabel(character: string): string {
+  if (character === "monk") return "Choose a player to protect (not yourself)";
+  if (character === "butler") return "Choose your master for tonight";
+  if (character === "poisoner") return "Choose a player to poison";
+  if (character === "imp") return "Choose a player to kill tonight";
+  return "Choose a player";
+}
+
+function NightChoicePanel({
+  state,
+  playerId,
+  dispatch,
+}: {
+  state: PlayerSnapshot;
+  playerId: string | undefined;
+  dispatch: (a: Action) => void;
+}): React.ReactElement {
+  const [targetId, setTargetId] = useState<string>("");
+  const [submitted, setSubmitted] = useState(false);
+
+  const { phase, grimoire } = state;
+  const isNightPhase = phase === "first-night" || phase === "night";
+
+  if (!playerId || !isNightPhase || state.winner) return <></>;
+
+  const myChar = grimoire.myCharacter;
+  if (
+    !NIGHT_ACTION_CHARACTERS.has(
+      myChar as "monk" | "butler" | "poisoner" | "imp",
+    )
+  ) {
+    return <></>;
+  }
+
+  // Check the character has a night action for this phase
+  const charData = TROUBLE_BREWING_CHARACTERS[myChar];
+  const hasNightAction =
+    phase === "first-night"
+      ? charData?.firstNightOrder !== null
+      : charData?.eachNightOrder !== null;
+  if (!hasNightAction) return <></>;
+
+  const me = grimoire.players.find((p) => p.id === playerId);
+  if (!me?.isAlive) return <></>;
+
+  if (submitted) {
+    return (
+      <div
+        style={{
+          marginBottom: 12,
+          padding: "8px 12px",
+          border: "1px solid #b7eb8f",
+          borderRadius: 6,
+          background: "#f6ffed",
+          fontSize: 13,
+          color: "#389e0d",
+        }}
+      >
+        Night action submitted.
+      </div>
+    );
+  }
+
+  // Monk cannot protect themselves; Butler cannot choose themselves
+  const selfExcluded = myChar === "monk" || myChar === "butler";
+  const targets = grimoire.players.filter(
+    (p) => p.isAlive && !(selfExcluded && p.id === playerId),
+  );
+  const resolvedTarget = targetId || targets[0]?.id;
+
+  return (
+    <div
+      style={{
+        marginBottom: 12,
+        padding: 10,
+        border: "2px solid #096dd9",
+        borderRadius: 6,
+        background: "#e6f7ff",
+      }}
+    >
+      <div style={{ fontWeight: "bold", marginBottom: 6, fontSize: 14 }}>
+        Night action — {nightChoiceLabel(myChar)}
+      </div>
+      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+        <select
+          value={resolvedTarget}
+          onChange={(e) => setTargetId(e.target.value)}
+          style={{ flex: 1 }}
+        >
+          {targets.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={() => {
+            if (!resolvedTarget) return;
+            dispatch({
+              type: "night-choice",
+              playerId,
+              targetIds: [resolvedTarget],
+            });
+            setSubmitted(true);
+          }}
+          style={{
+            background: "#096dd9",
+            color: "white",
+            border: "none",
+            borderRadius: 4,
+            padding: "4px 14px",
+            cursor: "pointer",
+          }}
+        >
+          Confirm
         </button>
       </div>
     </div>

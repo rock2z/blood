@@ -83,8 +83,8 @@ export function filterForPlayer(
   const me = grimoire.players.find((p) => p.id === playerId);
 
   // Fallback if player isn't found (shouldn't happen in practice)
-  const myTrueCharacter: CharacterId = me?.trueCharacter ?? "washerwoman";
-  const myCharacter: CharacterId = me?.perceivedCharacter ?? myTrueCharacter;
+  const myCharacter: CharacterId =
+    me?.perceivedCharacter ?? me?.trueCharacter ?? "washerwoman";
 
   // Night info delivered by the Storyteller to this specific player
   const myNightInfo = state.nightInfo[playerId] ?? null;

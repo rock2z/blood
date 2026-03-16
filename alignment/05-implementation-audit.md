@@ -1,6 +1,11 @@
 # Implementation Audit — Trouble Brewing Repository
 
-_Date: 2026-03-16_
+_Date: 2026-03-16 (revised — see note below)_
+
+> **Revision note (2026-03-16):** The original audit (written 2026-03-16) contained several
+> factually incorrect claims about the state of the code. Those claims have been corrected
+> below after a line-by-line review of the actual source. The one confirmed open bug
+> (Monk self-kill) has been fixed in the same session.
 
 ## Scope
 
@@ -9,13 +14,7 @@ This audit compares:
 1. The project's stated goals and architecture.
 2. The current implementation in engine/server/client.
 3. The existing automated tests.
-4. Public rules references attempted via web search (network access was blocked in this environment; details below).
-
-## Web Research Attempt
-
-I attempted to fetch public rules references (official wiki and search engines) but received blocked/empty responses from outbound HTTP in this environment (e.g. `403 Forbidden` from `https://example.com`).
-
-As a result, external verification relied on known Trouble Brewing mechanics already summarized in `alignment/03-research-summary.md`.
+4. The verified rules in `alignment/03-research-summary.md`.
 
 ## High-Level Understanding
 
@@ -30,97 +29,129 @@ The implementation already supports:
 - Setup of players/characters.
 - First-night and recurring night flow scaffolding.
 - Nominations, voting, executions.
-- Several character-specific mechanics (Virgin, Saint, Slayer, Monk, Soldier, Mayor redirect, Scarlet Woman, Imp self-kill branch, Ravenkeeper pause).
+- Several character-specific mechanics (Virgin, Saint, Slayer, Monk, Soldier, Mayor redirect,
+  Scarlet Woman, Imp self-kill branch, Ravenkeeper pause).
 - State filtering between Storyteller and Player clients.
+- Correct dead-player night-choice rejection.
+- Correct authorization guards (8 Storyteller-only actions, including `setup-players`).
+- Correct Drunk secrecy (player receives `perceivedCharacter`, not `trueCharacter`).
 
 ## Confirmed Documentation Ambiguities / Gaps
 
 1. **No top-level gameplay/status README.**
-   The alignment docs describe target architecture and goals, but there is no single current-state implementation matrix (what is fully implemented, partial, missing).
+   The alignment docs describe target architecture and goals, but there is no single
+   current-state implementation matrix (what is fully implemented, partial, missing).
+   See `alignment/06-character-status.md` for the recommended matrix.
 
 2. **No explicit trust/security model in protocol docs.**
-   The architecture's protocol section defines message shapes but not authorization guarantees (which actions must be Storyteller-only server-side).
+   The architecture's protocol section defines message shapes but not authorization
+   guarantees. These are enforced in `server/src/handler.ts` lines 74 and 125–134.
 
 3. **Character coverage lacks a completion checklist.**
-   Character data is complete, but ability execution is mixed (some automated, some Storyteller-manual), and this split is not tracked in one canonical implementation-status table.
+   Character data is complete, but ability execution is mixed (some automated, some
+   Storyteller-manual), and this split is not tracked in one canonical document.
 
-## Documented Rules vs Code Mismatches
+## Documented Rules vs Code — Current State
 
-1. **Drunk secrecy is broken for players.**
-   Player snapshots include `myTrueCharacter` and `myIsDrunk`, and Player UI explicitly tells the user they are the Drunk and reveals their true character.
-   That conflicts with the Drunk design intent in Trouble Brewing and with this project's own text that Drunk should think they are another Townsfolk.
+All items previously listed as mismatches have been resolved in the current codebase.
+The following table reflects the **corrected** analysis:
 
-2. **Poison secrecy is also broken for players.**
-   Snapshot/API and Player UI directly expose `myIsPoisoned`.
-   In Trouble Brewing, poisoned status is generally hidden from players.
+| Item                          | Claim in original audit                      | Actual code state                                                         |
+| ----------------------------- | -------------------------------------------- | ------------------------------------------------------------------------- |
+| `setup-players` authorization | "not enforced"                               | Guarded at `handler.ts:74`                                                |
+| Storyteller-only action ACL   | "only 3 actions"                             | 8 actions listed at `handler.ts:125–134`                                  |
+| Dead-player night-choice      | "no validation"                              | Error thrown at `dispatch.ts:389–391`                                     |
+| Drunk secrecy                 | "broken — exposes `myTrueCharacter`"         | `filterForPlayer` returns `perceivedCharacter` at `stateFilter.ts:87,118` |
+| Poison secrecy                | "broken — exposes `myIsPoisoned`"            | Field not present in `PlayerSnapshot` at `stateFilter.ts:28–41`           |
+| Imp self-kill + protection    | "protection can incorrectly block self-kill" | No such bug in current code                                               |
 
-3. **Server does not enforce Storyteller-only setup.**
-   `setup-players` is accepted from any identified client; no role guard is present.
+## Implementation Bugs — Fixed
 
-4. **Server only guards a subset of Storyteller-only actions.**
-   Current guard blocks only 3 actions; other high-impact actions (`start-game`, `resolve-night`, `advance-to-night`, `execute`, `skip-execution`) are not restricted.
+### ~~Critical bug: Monk self-kill protection (FIXED 2026-03-16)~~
 
-5. **Night-choice actions can be submitted by dead players.**
-   `handleNightChoice` does not validate `player.isAlive` before applying role effects.
+**Rule** (`alignment/03-research-summary.md` line 52):
 
-6. **Night-choice role gating is permissive.**
-   Any player's `night-choice` is accepted during night phases, even when their character should not act at that timing; this is manageable for a trustful Storyteller workflow but is not aligned with strict rules enforcement.
+> "Protection applies to Imp self-kill: if Imp targets themselves and Monk protected them,
+> self-kill is prevented. Imp stays alive, no new Demon created."
 
-## Implementation Bugs / Incorrect Behavior
+**Was**: The self-kill branch in `handleResolveNight` entered immediately without checking
+`isProtected`. Protection checks existed only in the `else` (non-self-kill) branch.
 
-1. **Critical bug: Imp self-kill checks wrong target for Monk/Soldier blocking.**
-   In night resolution, when Imp targets themselves, protection checks are computed against the Imp target and can block the self-kill path entirely.
-   - Soldier check can incorrectly treat Imp as Soldier-protected if the Imp has transformed from Scarlet Woman and retained old `isProtected`/status state.
-   - More fundamentally, self-kill should resolve via self-kill logic branch regardless of ordinary target protection checks.
+**Fix applied**: Added Monk-protection check at the top of the `if (isSelfKill)` block in
+`packages/engine/src/engine/dispatch.ts`. If the Imp is protected by a live, healthy Monk,
+`finaliseNightResolution` is called immediately with no death.
 
-2. **Authorization bug: non-Storytellers can mutate room state.**
-   Any player can currently send `setup-players` and several non-guarded control actions.
+**Regression tests added** in `dispatch.test.ts`:
 
-3. **Rules leak bug: private hidden-state exposed to players.**
-   Player-facing API/UI leaks true character and poisoned/drunk status.
+- `Monk protecting Imp: self-kill is blocked, Imp survives, game continues`
+- `Poisoned Monk does NOT block Imp self-kill — Imp dies`
+- `self-kill is not blocked by stale isProtected flag when no Monk is in play`
 
-4. **Potential fairness bug: no strict vote turn-order enforcement.**
-   Voting checks eligibility and duplicate voting but does not enforce that voters act in the required clockwise sequence.
+## Known Rules Interpretations (Not Bugs)
 
-## Test Coverage Gaps
+### Butler sequential voting limitation
 
-1. No tests asserting unauthorized clients are blocked from `setup-players`.
-2. No tests asserting unauthorized clients are blocked from day/night control actions outside the 3 currently guarded actions.
-3. No tests for dead-player `night-choice` rejection.
-4. No tests for “player snapshots must not reveal true Drunk identity / poisoned status.”
-5. No regression test for Imp self-kill interaction with protection checks.
+In the digital sequential voting model (`dispatch.ts:554–574`), the Butler's YES vote is
+suppressed unless the master has already voted YES earlier in the clockwise sequence.
+In the physical game, voting is simultaneous (raised hands), so the Butler just needs to
+see the master's hand up at the same moment.
 
-## Proposed Next Steps (Most Logical Sequence)
+**Consequence**: If Butler is seated clockwise before their master, Butler votes before the
+master and can never vote YES in that game.
 
-1. **Fix information-leak model first (high product correctness).**
-   - Remove `myTrueCharacter`, `myIsDrunk`, `myIsPoisoned` from player snapshots.
-   - Keep only `myPerceivedCharacter` and role-appropriate private data.
-   - Update Player UI accordingly.
+**Recommendation**: The Storyteller should advise Butler players to choose a master who sits
+clockwise before them in the circle.
 
-2. **Harden server authorization (high security/integrity).**
-   - Restrict `setup-players` to Storyteller.
-   - Expand server-side action ACL to all Storyteller-controlled phase/resolve/execute actions.
-   - Add handler tests for denial cases.
+### Ghost-vote-used players excluded from future nominations
 
-3. **Fix night-resolution self-kill path (high gameplay correctness).**
-   - Ensure Imp self-kill bypasses normal target protection logic and always enters self-kill branch.
-   - Add focused engine tests for Monk/Soldier interactions with Imp self-kill.
+Dead players who have used their ghost vote (`ghostVoteUsed: true`) are excluded from
+`allVoters` entirely in `handleNominate` (`dispatch.ts:499–503`). Per strict rules they
+could still vote NO (silently). In practice their NO votes do not affect outcomes. This
+is a deliberate UX simplification — if included, they would need to explicitly vote NO in
+every subsequent nomination.
 
-4. **Add strict action validity checks in engine.**
-   - Reject `night-choice` from dead players.
-   - Optionally validate per-character timing windows if the team wants stronger engine authority.
+## Open Implementation Gaps
 
-5. **Improve rules-implementation traceability.**
-   - Add a character-by-character “implemented / storyteller-assisted / missing” matrix.
-   - Link each mechanic to tests.
+1. **No night-choice UI for players.**
+   `PlayerView` has no generic panel for characters who pick a night target (Monk, Butler,
+   Poisoner, Imp). Players currently cannot submit their night actions through the client.
+   See proposed `NightChoicePanel` component in `client/src/views/PlayerView.tsx`.
 
-6. **Then continue feature depth.**
-   - Formalize night-order executor UX so required character steps are visibly complete before `resolve-night`.
-   - Implement remaining nuanced TB interactions (Spy/Recluse registration hooks in info checks, Undertaker/Empath/etc. computed helper outputs for Storyteller tooling).
+2. **No Spy Grimoire delivery.**
+   The Spy's "see the full Grimoire" ability is entirely Storyteller-handled. The server
+   could automatically push the Storyteller snapshot to the Spy client during their night step.
 
-## Suggested Delivery Plan (2 short iterations)
+3. **No info-computation helpers for Storyteller.**
+   Characters such as Empath, Fortune Teller, Chef, Undertaker, Washerwoman, Librarian, and
+   Investigator require the Storyteller to compute the correct (or plausibly incorrect)
+   information manually. Helper functions in the engine would assist.
 
-- **Iteration A (stability):** secrecy model + authorization + tests.
-- **Iteration B (rules depth):** self-kill fix + alive/timing validation + regression tests + docs matrix.
+4. **Night-choice role gating is permissive.**
+   Any player can submit a `night-choice` action during night phases; the engine only
+   processes choices for `monk`, `poisoner`, `imp`, and `butler` — others are silently
+   ignored. Manageable for a Storyteller-supervised workflow but not strict rules enforcement.
 
-This sequencing minimizes exploitability and hidden-info leakage before adding more mechanics.
+5. **Vote turn-order not enforced engine-side.**
+   The client UI enforces sequential voting (showing "Waiting for X to vote…"), but the
+   engine itself does not reject out-of-order votes. A modified client could vote out of
+   sequence as long as the player is eligible.
+
+6. **Ravenkeeper choice lacks player-identity validation.**
+   The `ravenkeeper-choice` action does not carry a `playerId` field, so the engine cannot
+   verify it was sent by the actual Ravenkeeper player. In practice the UI gating (`myCharacter
+=== "ravenkeeper"` in `PlayerView`) prevents abuse.
+
+## Proposed Next Steps
+
+1. **Add night-choice UI for players** (`client/src/views/PlayerView.tsx`).
+2. **Add info-computation helpers** (`engine/src/engine/infoHelpers.ts`):
+   Empath, Chef, Fortune Teller, Undertaker, Washerwoman, Librarian, Investigator.
+3. **Add character implementation status matrix** (`alignment/06-character-status.md`).
+4. **Implement Spy Grimoire delivery** — push Storyteller snapshot to Spy client on night step.
+5. **Optionally harden night-choice role gating** for stricter rules enforcement.
+
+## Suggested Delivery Plan
+
+- **Iteration A (UX completeness):** night-choice panels + info helpers + character matrix.
+- **Iteration B (rules depth):** Spy delivery + role gating + vote order enforcement +
+  documentation of all remaining Storyteller-discretion mechanics.
