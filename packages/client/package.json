@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Blood on the Clocktower — React client (Storyteller + player views)",
   "scripts": {
+    "predev": "npm run build -w @botc/engine",
     "dev": "vite",
     "prebuild": "npm run build -w @botc/engine",
     "build": "tsc && vite build",
