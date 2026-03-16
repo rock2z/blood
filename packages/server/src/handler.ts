@@ -71,6 +71,16 @@ export function handleMessage(
     }
 
     case "setup-players": {
+      if (client.identity?.role !== "storyteller") {
+        client.send(
+          JSON.stringify({
+            type: "error",
+            payload: `Message "setup-players" is restricted to the Storyteller`,
+          }),
+        );
+        return;
+      }
+
       // Reinitialize the room's game state with a new player list
       const players = payload as Player[];
 
@@ -113,6 +123,11 @@ export function handleMessage(
 
       // Guard Storyteller-only actions so regular players cannot dispatch them.
       const storytellerOnlyActions = new Set([
+        "start-game",
+        "resolve-night",
+        "advance-to-night",
+        "execute",
+        "skip-execution",
         "storyteller-mayor-redirect",
         "storyteller-choose-minion",
         "storyteller-deliver-info",

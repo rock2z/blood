@@ -6,7 +6,7 @@
  * Player:      public GameState + their own private character info
  */
 
-import { GameState, PlayerId, CharacterId, Alignment } from "@botc/engine";
+import { GameState, PlayerId, CharacterId } from "@botc/engine";
 
 // ============================================================
 // Public player view (what other players see about you)
@@ -28,14 +28,8 @@ export interface PublicPlayer {
 export interface PlayerGrimoire {
   /** Public info for every player at the table */
   players: PublicPlayer[];
-  /** This player's own character (their true identity) */
-  myTrueCharacter: CharacterId;
   /** The character this player *believes* they are (Drunk sees a fake token) */
-  myPerceivedCharacter: CharacterId;
-  myAlignment: Alignment;
-  /** Whether this player is poisoned (they may not know, but we tell them) */
-  myIsPoisoned: boolean;
-  myIsDrunk: boolean;
+  myCharacter: CharacterId;
   /** Demon bluffs — only non-null for the Imp player */
   myDemonBluffs: CharacterId[] | null;
   /** Public grimoire fields */
@@ -90,11 +84,7 @@ export function filterForPlayer(
 
   // Fallback if player isn't found (shouldn't happen in practice)
   const myTrueCharacter: CharacterId = me?.trueCharacter ?? "washerwoman";
-  const myPerceivedCharacter: CharacterId =
-    me?.perceivedCharacter ?? myTrueCharacter;
-  const myAlignment: Alignment = me?.alignment ?? "Townsfolk";
-  const myIsPoisoned = me?.isPoisoned ?? false;
-  const myIsDrunk = me?.isDrunk ?? false;
+  const myCharacter: CharacterId = me?.perceivedCharacter ?? myTrueCharacter;
 
   // Night info delivered by the Storyteller to this specific player
   const myNightInfo = state.nightInfo[playerId] ?? null;
@@ -125,11 +115,7 @@ export function filterForPlayer(
     pendingMinionPromotion: state.pendingMinionPromotion,
     grimoire: {
       players: publicPlayers,
-      myTrueCharacter,
-      myPerceivedCharacter,
-      myAlignment,
-      myIsPoisoned,
-      myIsDrunk,
+      myCharacter,
       myDemonBluffs,
       slayerUsed: grimoire.slayerUsed,
       virginAbilityFired: grimoire.virginAbilityFired,

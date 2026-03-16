@@ -151,27 +151,7 @@ function handleResolveNight(state: GameState): GameState {
       effectiveKillTargetId = mayorRedirect;
     }
 
-    const target = getPlayer(grimoire, effectiveKillTargetId);
-
-    // Check if Monk protection is effective for the effective target
-    const monkPlayer = getPlayerByCharacter(grimoire, "monk");
-    const monkEffective =
-      monkPlayer !== undefined &&
-      monkPlayer.isAlive &&
-      !monkPlayer.isPoisoned &&
-      !monkPlayer.isDrunk;
-    const targetIsProtected = target.isProtected && monkEffective;
-
-    // Soldier: passively protected from Demon kill (only for their own person, not redirected kills)
-    const soldierSelfProtected =
-      !isSelfKill &&
-      target.trueCharacter === "soldier" &&
-      !target.isPoisoned &&
-      !target.isDrunk;
-
-    if (targetIsProtected || soldierSelfProtected) {
-      // Kill is blocked — no death this night
-    } else if (isSelfKill) {
+    if (isSelfKill) {
       // Imp self-kill: try Scarlet Woman first
       const { grimoire: swGrimoire, activated } =
         tryActivateScarletWoman(grimoire);
@@ -221,6 +201,28 @@ function handleResolveNight(state: GameState): GameState {
         }
       }
     } else {
+      const target = getPlayer(grimoire, effectiveKillTargetId);
+
+      // Check if Monk protection is effective for the effective target
+      const monkPlayer = getPlayerByCharacter(grimoire, "monk");
+      const monkEffective =
+        monkPlayer !== undefined &&
+        monkPlayer.isAlive &&
+        !monkPlayer.isPoisoned &&
+        !monkPlayer.isDrunk;
+      const targetIsProtected = target.isProtected && monkEffective;
+
+      // Soldier: passively protected from Demon kill
+      const soldierSelfProtected =
+        target.trueCharacter === "soldier" &&
+        !target.isPoisoned &&
+        !target.isDrunk;
+
+      if (targetIsProtected || soldierSelfProtected) {
+        // Kill is blocked — no death this night
+        return finaliseNightResolution(currentState);
+      }
+
       // Normal Imp kill (possibly redirected via Mayor)
       const { grimoire: deadGrimoire, log } = killPlayer(
         grimoire,
@@ -384,6 +386,9 @@ function handleNightChoice(
   }
 
   const player = getPlayer(state.grimoire, action.playerId);
+  if (!player.isAlive) {
+    throw new Error("Dead players cannot act at night");
+  }
   const char = player.trueCharacter;
 
   // Poisoned/drunk players: ability has no effect (but still accepted to avoid

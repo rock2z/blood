@@ -10,8 +10,16 @@
  */
 
 import React, { useState } from "react";
-import { Action } from "@botc/engine";
+import { Action, CharacterId } from "@botc/engine";
 import { PlayerSnapshot, PublicPlayer, SendFn } from "../useGame";
+
+const EVIL_CHARACTERS = new Set<CharacterId>([
+  "imp",
+  "poisoner",
+  "spy",
+  "scarletwoman",
+  "baron",
+]);
 
 interface Props {
   state: PlayerSnapshot;
@@ -86,16 +94,9 @@ function MyCharacterCard({
 }: {
   grimoire: PlayerSnapshot["grimoire"];
 }): React.ReactElement {
-  const {
-    myPerceivedCharacter,
-    myTrueCharacter,
-    myAlignment,
-    myIsPoisoned,
-    myIsDrunk,
-    myDemonBluffs,
-  } = grimoire;
+  const { myCharacter, myDemonBluffs } = grimoire;
 
-  const isEvil = myAlignment === "Minion" || myAlignment === "Demon";
+  const isEvil = EVIL_CHARACTERS.has(myCharacter);
   const borderColor = isEvil ? "crimson" : "royalblue";
   const bgColor = isEvil ? "#fff5f5" : "#f5f8ff";
 
@@ -119,7 +120,7 @@ function MyCharacterCard({
           textTransform: "capitalize",
         }}
       >
-        {myPerceivedCharacter}
+        {myCharacter}
       </div>
       <div
         style={{
@@ -128,41 +129,8 @@ function MyCharacterCard({
           marginTop: 2,
         }}
       >
-        {myAlignment}
+        {isEvil ? "evil" : "good"}
       </div>
-
-      {myIsDrunk && (
-        <div
-          style={{
-            marginTop: 6,
-            padding: "4px 8px",
-            background: "#fff8e1",
-            borderRadius: 4,
-            fontSize: 12,
-            color: "#795548",
-          }}
-        >
-          🍺 You are the <strong>Drunk</strong> — you think you are{" "}
-          {myPerceivedCharacter} but your ability gives unreliable information.
-          Your true character is {myTrueCharacter}.
-        </div>
-      )}
-
-      {myIsPoisoned && (
-        <div
-          style={{
-            marginTop: 6,
-            padding: "4px 8px",
-            background: "#fce4ec",
-            borderRadius: 4,
-            fontSize: 12,
-            color: "#b71c1c",
-          }}
-        >
-          ☠ You are <strong>poisoned</strong> — your ability may give false or
-          no information tonight.
-        </div>
-      )}
 
       {myDemonBluffs && myDemonBluffs.length > 0 && (
         <div
@@ -482,7 +450,7 @@ function SlayerPanel({
   if (!playerId) return <></>;
   if (state.phase !== "day") return <></>;
   if (state.winner) return <></>;
-  if (state.grimoire.myTrueCharacter !== "slayer") return <></>;
+  if (state.grimoire.myCharacter !== "slayer") return <></>;
   if (state.grimoire.slayerUsed) return <></>;
 
   const me = state.grimoire.players.find((p) => p.id === playerId);
@@ -557,7 +525,7 @@ function RavenkeeperPanel({
 
   if (!playerId) return <></>;
   if (!state.pendingRavenkeeperChoice) return <></>;
-  if (state.grimoire.myTrueCharacter !== "ravenkeeper") return <></>;
+  if (state.grimoire.myCharacter !== "ravenkeeper") return <></>;
 
   const allPlayers = state.grimoire.players;
   const resolvedTarget = targetId || allPlayers[0]?.id;
