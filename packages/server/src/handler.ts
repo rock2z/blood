@@ -121,21 +121,6 @@ export function handleMessage(
     case "action": {
       let action = payload as Action;
 
-      // Ravenkeeper choice must come from a player connection (not storyteller)
-      // and from the actual Ravenkeeper player.
-      if (
-        action.type === "ravenkeeper-choice" &&
-        client.identity?.role !== "player"
-      ) {
-        client.send(
-          JSON.stringify({
-            type: "error",
-            payload: `Action "ravenkeeper-choice" is restricted to the Ravenkeeper player`,
-          }),
-        );
-        return;
-      }
-
       // Guard Storyteller-only actions so regular players cannot dispatch them.
       const storytellerOnlyActions = new Set([
         "start-game",
