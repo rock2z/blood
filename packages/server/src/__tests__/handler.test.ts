@@ -666,6 +666,97 @@ describe("action → broadcast", () => {
       `Action "${actionType}" is restricted to the Storyteller`,
     );
   });
+
+  test("player nominate action is identity-bound (forged nominatorId is ignored)", () => {
+    const room = createRoom("test");
+    const stClient = makeMockClient("test", "storyteller");
+    const bobClient = makeMockClient("test", "player", "bob");
+    room.clients.add(stClient);
+    room.clients.add(bobClient);
+
+    handleMessage(stClient, room, {
+      type: "setup-players",
+      payload: makePlayers(),
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "start-game" },
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "resolve-night" },
+    });
+
+    handleMessage(bobClient, room, {
+      type: "action",
+      payload: { type: "nominate", nominatorId: "eve", targetId: "alice" },
+    });
+
+    expect(room.state.voting?.nominatorId).toBe("bob");
+  });
+
+  test("player night-choice action is identity-bound (forged playerId is ignored)", () => {
+    const room = createRoom("test");
+    const stClient = makeMockClient("test", "storyteller");
+    const bobClient = makeMockClient("test", "player", "bob");
+    room.clients.add(stClient);
+    room.clients.add(bobClient);
+
+    handleMessage(stClient, room, {
+      type: "setup-players",
+      payload: makePlayers(),
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "start-game" },
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "resolve-night" },
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "advance-to-night" },
+    });
+
+    // bob (Empath) attempts to spoof Imp action as alice
+    handleMessage(bobClient, room, {
+      type: "action",
+      payload: { type: "night-choice", playerId: "alice", targetIds: ["eve"] },
+    });
+
+    expect(room.state.grimoire.impTarget).toBeNull();
+  });
+
+  test("player slayer-shoot action is identity-bound", () => {
+    const room = createRoom("test");
+    const stClient = makeMockClient("test", "storyteller");
+    const bobClient = makeMockClient("test", "player", "bob");
+    room.clients.add(stClient);
+    room.clients.add(bobClient);
+
+    handleMessage(stClient, room, {
+      type: "setup-players",
+      payload: makePlayers(),
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "start-game" },
+    });
+    handleMessage(stClient, room, {
+      type: "action",
+      payload: { type: "resolve-night" },
+    });
+
+    handleMessage(bobClient, room, {
+      type: "action",
+      payload: { type: "slayer-shoot", slayerId: "eve", targetId: "alice" },
+    });
+
+    const msg = lastMsg(bobClient);
+    expect(msg.type).toBe("error");
+    expect(String(msg.payload)).toContain("Player bob is not the Slayer");
+  });
 });
 
 // ============================================================

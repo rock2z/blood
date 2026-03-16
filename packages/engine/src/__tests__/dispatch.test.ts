@@ -2101,7 +2101,7 @@ describe("night-choice — throws outside night phase", () => {
     ).toThrow(/night phase/);
   });
 
-  test("dead player cannot submit night-choice", () => {
+  test("dead player can submit night-choice (dead players keep abilities)", () => {
     const players = [
       makePlayer({
         id: "imp",
@@ -2121,13 +2121,15 @@ describe("night-choice — throws outside night phase", () => {
     ];
     const s = dispatch(dayState(players), { type: "advance-to-night" });
 
-    expect(() =>
-      dispatch(s, {
-        type: "night-choice",
-        playerId: "poisoner",
-        targetIds: ["p1"],
-      }),
-    ).toThrow("Dead players cannot act at night");
+    const next = dispatch(s, {
+      type: "night-choice",
+      playerId: "poisoner",
+      targetIds: ["p1"],
+    });
+    expect(next.grimoire.poisonerTarget).toBe("p1");
+    expect(next.grimoire.players.find((p) => p.id === "p1")?.isPoisoned).toBe(
+      true,
+    );
   });
 });
 

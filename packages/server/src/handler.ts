@@ -119,7 +119,7 @@ export function handleMessage(
     }
 
     case "action": {
-      const action = payload as Action;
+      let action = payload as Action;
 
       // Guard Storyteller-only actions so regular players cannot dispatch them.
       const storytellerOnlyActions = new Set([
@@ -143,6 +143,44 @@ export function handleMessage(
           }),
         );
         return;
+      }
+
+      // Player-originated actions are always bound to the authenticated socket
+      // identity. Ignore any forged player IDs in payload.
+      if (client.identity?.role === "player") {
+        const actorId = client.identity.playerId;
+        if (!actorId) {
+          client.send(
+            JSON.stringify({
+              type: "error",
+              payload: `Player action requires an identified playerId`,
+            }),
+          );
+          return;
+        }
+
+        if (action.type === "night-choice") {
+          action = { ...action, playerId: actorId };
+        } else if (action.type === "nominate") {
+          action = { ...action, nominatorId: actorId };
+        } else if (action.type === "vote") {
+          action = { ...action, playerId: actorId };
+        } else if (action.type === "slayer-shoot") {
+          action = { ...action, slayerId: actorId };
+        } else if (action.type === "ravenkeeper-choice") {
+          const ravenkeeper = room.state.grimoire.players.find(
+            (p) => p.trueCharacter === "ravenkeeper",
+          );
+          if (!ravenkeeper || ravenkeeper.id !== actorId) {
+            client.send(
+              JSON.stringify({
+                type: "error",
+                payload: `Action "ravenkeeper-choice" is restricted to the Ravenkeeper player`,
+              }),
+            );
+            return;
+          }
+        }
       }
 
       try {

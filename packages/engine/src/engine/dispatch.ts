@@ -386,9 +386,6 @@ function handleNightChoice(
   }
 
   const player = getPlayer(state.grimoire, action.playerId);
-  if (!player.isAlive) {
-    throw new Error("Dead players cannot act at night");
-  }
   const char = player.trueCharacter;
 
   // Poisoned/drunk players: ability has no effect (but still accepted to avoid
