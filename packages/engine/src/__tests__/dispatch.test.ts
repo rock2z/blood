@@ -2131,6 +2131,37 @@ describe("night-choice — throws outside night phase", () => {
       true,
     );
   });
+
+  test("dead Imp cannot submit night-choice", () => {
+    const players = [
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        isAlive: false,
+        seatIndex: 0,
+      }),
+      // Keep at least one living Demon-aligned player so the game can enter day/night
+      // phases for this validation scenario.
+      makePlayer({
+        id: "other-demon",
+        trueCharacter: "scarletwoman",
+        alignment: "Demon",
+        seatIndex: 1,
+      }),
+      makePlayer({ id: "p1", seatIndex: 2 }),
+      makePlayer({ id: "p2", seatIndex: 3 }),
+    ];
+    const s = dispatch(dayState(players), { type: "advance-to-night" });
+
+    expect(() =>
+      dispatch(s, {
+        type: "night-choice",
+        playerId: "imp",
+        targetIds: ["p1"],
+      }),
+    ).toThrow("Dead Imp cannot act at night");
+  });
 });
 
 describe("night-choice — self-targeting validation", () => {
