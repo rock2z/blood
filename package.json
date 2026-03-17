@@ -5,6 +5,7 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "npm run dev -w @botc/server & npm run dev -w @botc/client",
     "build": "npm run build -ws --if-present",
     "test": "npm run test -ws --if-present",
     "typecheck": "npm run typecheck -ws --if-present",
