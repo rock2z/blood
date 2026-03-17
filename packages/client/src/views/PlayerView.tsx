@@ -10,6 +10,7 @@
  */
 
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Action, TB_BY_ALIGNMENT } from "@botc/engine";
 import { PlayerSnapshot, PublicPlayer, SendFn } from "../useGame";
 
@@ -31,6 +32,7 @@ export function PlayerView({
   send,
   playerId,
 }: Props): React.ReactElement {
+  const { t } = useTranslation();
   const { phase, day, winner, grimoire, voting, executionCandidateId } = state;
   const dispatch = (action: Action) =>
     send({ type: "action", payload: action });
@@ -44,11 +46,11 @@ export function PlayerView({
         padding: 16,
       }}
     >
-      <h1 style={{ fontSize: 20 }}>Blood on the Clocktower</h1>
+      <h1 style={{ fontSize: 20 }}>{t("player.title")}</h1>
 
       <div style={{ marginBottom: 12 }}>
-        <strong>Phase:</strong> {phase} &nbsp;
-        <strong>Day:</strong> {day}
+        <strong>{t("player.phase")}</strong> {phase} &nbsp;
+        <strong>{t("player.day")}</strong> {day}
         {winner && (
           <span
             style={{
@@ -57,7 +59,7 @@ export function PlayerView({
               fontWeight: "bold",
             }}
           >
-            {winner.toUpperCase()} WINS
+            {t("player.wins", { winner: winner.toUpperCase() })}
           </span>
         )}
       </div>
@@ -93,6 +95,7 @@ function MyCharacterCard({
 }: {
   grimoire: PlayerSnapshot["grimoire"];
 }): React.ReactElement {
+  const { t } = useTranslation();
   const { myCharacter, myDemonBluffs } = grimoire;
 
   const isEvil = EVIL_CHARACTERS.has(myCharacter);
@@ -110,7 +113,7 @@ function MyCharacterCard({
       }}
     >
       <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-        Your character
+        {t("player.your_character")}
       </div>
       <div
         style={{
@@ -119,7 +122,7 @@ function MyCharacterCard({
           textTransform: "capitalize",
         }}
       >
-        {myCharacter}
+        {t(`characters.${myCharacter}`, { defaultValue: myCharacter })}
       </div>
       <div
         style={{
@@ -128,7 +131,7 @@ function MyCharacterCard({
           marginTop: 2,
         }}
       >
-        {isEvil ? "evil" : "good"}
+        {isEvil ? t("player.evil") : t("player.good")}
       </div>
 
       {myDemonBluffs && myDemonBluffs.length > 0 && (
@@ -148,10 +151,12 @@ function MyCharacterCard({
               marginBottom: 2,
             }}
           >
-            Demon bluffs — safe characters to claim:
+            {t("player.demon_bluffs")}
           </div>
           <div style={{ fontSize: 13, color: "#b71c1c" }}>
-            {myDemonBluffs.join(", ")}
+            {myDemonBluffs
+              .map((id) => t(`characters.${id}`, { defaultValue: id }))
+              .join(", ")}
           </div>
         </div>
       )}
@@ -170,9 +175,11 @@ function PlayerList({
   players: PublicPlayer[];
   executionCandidateId: string | null;
 }): React.ReactElement {
+  const { t } = useTranslation();
+
   return (
     <div>
-      <h2 style={{ fontSize: 16 }}>Players</h2>
+      <h2 style={{ fontSize: 16 }}>{t("player.players_title")}</h2>
       <ul style={{ listStyle: "none", padding: 0 }}>
         {players.map((p) => {
           const isCandidate = p.id === executionCandidateId;
@@ -196,11 +203,13 @@ function PlayerList({
               <span style={{ flex: 1 }}>{p.name}</span>
               {!p.isAlive && (
                 <span style={{ fontSize: 12, color: "#999" }}>
-                  {p.ghostVoteUsed ? "dead (vote used)" : "dead"}
+                  {p.ghostVoteUsed
+                    ? t("player.dead_vote_used")
+                    : t("player.dead")}
                 </span>
               )}
               {isCandidate && (
-                <span style={{ fontSize: 12 }}>on the block</span>
+                <span style={{ fontSize: 12 }}>{t("player.on_the_block")}</span>
               )}
             </li>
           );
@@ -215,6 +224,7 @@ function PlayerList({
 // ============================================================
 
 function ActiveVote({ state }: { state: PlayerSnapshot }): React.ReactElement {
+  const { t } = useTranslation();
   const { voting, grimoire } = state;
   if (!voting) return <></>;
 
@@ -235,9 +245,10 @@ function ActiveVote({ state }: { state: PlayerSnapshot }): React.ReactElement {
         borderRadius: 6,
       }}
     >
-      <strong>Vote:</strong> Execute {targetName}?
+      <strong>{t("player.vote_execute", { name: targetName })}</strong>
       <div style={{ fontSize: 13, marginTop: 4, color: "#555" }}>
-        Need {threshold} votes &nbsp;|&nbsp; YES: {yesCount}
+        {t("player.need_votes", { threshold })} &nbsp;|&nbsp;{" "}
+        {t("player.yes_count", { count: yesCount })}
       </div>
     </div>
   );
@@ -254,6 +265,8 @@ function NightInfoPanel({
   grimoire: PlayerSnapshot["grimoire"];
   phase: PlayerSnapshot["phase"];
 }): React.ReactElement {
+  const { t } = useTranslation();
+
   if (
     (phase !== "first-night" && phase !== "night") ||
     grimoire.myNightInfo === null
@@ -271,7 +284,7 @@ function NightInfoPanel({
       }}
     >
       <div style={{ fontWeight: "bold", fontSize: 13, marginBottom: 4 }}>
-        Night Information
+        {t("player.night_info_title")}
       </div>
       <div style={{ fontSize: 14 }}>{grimoire.myNightInfo}</div>
     </div>
@@ -291,6 +304,8 @@ function VoteButtons({
   playerId: string | undefined;
   dispatch: (a: Action) => void;
 }): React.ReactElement {
+  const { t } = useTranslation();
+
   if (!playerId) return <></>;
   if (state.winner) return <></>;
   const { voting } = state;
@@ -306,7 +321,7 @@ function VoteButtons({
         pendingVoter;
       return (
         <div style={{ fontSize: 13, color: "#555", marginBottom: 8 }}>
-          Waiting for <strong>{voterName}</strong> to vote…
+          {t("player.waiting_for", { name: voterName })}
         </div>
       );
     }
@@ -328,7 +343,7 @@ function VoteButtons({
       }}
     >
       <div style={{ fontWeight: "bold", marginBottom: 6 }}>
-        Your vote: Execute {targetName}?
+        {t("player.your_vote_execute", { name: targetName })}
       </div>
       <div style={{ display: "flex", gap: 8 }}>
         <button
@@ -342,7 +357,7 @@ function VoteButtons({
             cursor: "pointer",
           }}
         >
-          YES
+          {t("player.yes")}
         </button>
         <button
           onClick={() => dispatch({ type: "vote", playerId, vote: false })}
@@ -355,7 +370,7 @@ function VoteButtons({
             cursor: "pointer",
           }}
         >
-          NO
+          {t("player.no")}
         </button>
       </div>
     </div>
@@ -375,6 +390,7 @@ function NominatePanel({
   playerId: string | undefined;
   dispatch: (a: Action) => void;
 }): React.ReactElement {
+  const { t } = useTranslation();
   const [targetId, setTargetId] = useState<string>("");
 
   if (!playerId) return <></>;
@@ -402,7 +418,9 @@ function NominatePanel({
         borderRadius: 6,
       }}
     >
-      <div style={{ fontWeight: "bold", marginBottom: 6 }}>Nominate</div>
+      <div style={{ fontWeight: "bold", marginBottom: 6 }}>
+        {t("player.nominate")}
+      </div>
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
         <select
           value={resolvedTarget}
@@ -424,7 +442,7 @@ function NominatePanel({
             })
           }
         >
-          Nominate
+          {t("player.nominate")}
         </button>
       </div>
     </div>
@@ -444,6 +462,7 @@ function SlayerPanel({
   playerId: string | undefined;
   dispatch: (a: Action) => void;
 }): React.ReactElement {
+  const { t } = useTranslation();
   const [targetId, setTargetId] = useState<string>("");
 
   if (!playerId) return <></>;
@@ -469,7 +488,7 @@ function SlayerPanel({
       }}
     >
       <div style={{ fontWeight: "bold", marginBottom: 6 }}>
-        Slayer ability — shoot a player
+        {t("player.slayer_ability")}
       </div>
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
         <select
@@ -500,7 +519,7 @@ function SlayerPanel({
             cursor: "pointer",
           }}
         >
-          Shoot
+          {t("player.shoot")}
         </button>
       </div>
     </div>
@@ -520,6 +539,7 @@ function RavenkeeperPanel({
   playerId: string | undefined;
   dispatch: (a: Action) => void;
 }): React.ReactElement {
+  const { t } = useTranslation();
   const [targetId, setTargetId] = useState<string>("");
 
   if (!playerId) return <></>;
@@ -540,7 +560,7 @@ function RavenkeeperPanel({
       }}
     >
       <div style={{ fontWeight: "bold", marginBottom: 6 }}>
-        Ravenkeeper — choose a player to learn their character
+        {t("player.ravenkeeper_title")}
       </div>
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
         <select
@@ -550,7 +570,7 @@ function RavenkeeperPanel({
         >
           {allPlayers.map((p) => (
             <option key={p.id} value={p.id}>
-              {p.name} {p.isAlive ? "" : "(dead)"}
+              {p.name} {p.isAlive ? "" : t("player.dead_suffix")}
             </option>
           ))}
         </select>
@@ -559,7 +579,7 @@ function RavenkeeperPanel({
             dispatch({ type: "ravenkeeper-choice", targetId: resolvedTarget })
           }
         >
-          Choose
+          {t("player.choose")}
         </button>
       </div>
     </div>

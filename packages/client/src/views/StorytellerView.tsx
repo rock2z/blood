@@ -8,6 +8,7 @@
  */
 
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   GameState,
   Player,
@@ -29,6 +30,7 @@ interface Props {
 }
 
 export function StorytellerView({ state, send }: Props): React.ReactElement {
+  const { t } = useTranslation();
   const dispatch = (action: Action) =>
     send({ type: "action", payload: action });
 
@@ -36,7 +38,7 @@ export function StorytellerView({ state, send }: Props): React.ReactElement {
 
   return (
     <div style={{ fontFamily: "monospace", padding: 16 }}>
-      <h1>Blood on the Clocktower — Storyteller</h1>
+      <h1>{t("app.title")} — Storyteller</h1>
 
       {!hasPlayers ? (
         <SetupPlayers send={send} />
@@ -104,6 +106,7 @@ function buildPlayers(names: string[], bag: CharacterId[]): Player[] {
 }
 
 function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
+  const { t } = useTranslation();
   const [names, setNames] = useState<string[]>(DEFAULT_NAMES);
   const [bag, setBag] = useState<CharacterId[]>(() =>
     buildRandomBag(DEFAULT_NAMES),
@@ -147,16 +150,25 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
 
   return (
     <div>
-      <h2>Setup Players ({names.length})</h2>
+      <h2>{t("setup.title", { count: names.length })}</h2>
       <p style={{ fontSize: 13, color: "#555" }}>
-        Enter player names then press <strong>Roll Characters</strong> to
-        randomly assign roles. Hit <strong>Start Game</strong> when ready.
+        {t("setup.instructions_1")}{" "}
+        <strong>{t("setup.instructions_roll")}</strong>{" "}
+        {t("setup.instructions_2")}{" "}
+        <strong>{t("setup.instructions_start")}</strong>{" "}
+        {t("setup.instructions_3")}
       </p>
 
       <table style={{ borderCollapse: "collapse", marginBottom: 12 }}>
         <thead>
           <tr>
-            {["Seat", "Name", "Character", "Align", ""].map((h) => (
+            {[
+              t("setup.seat"),
+              t("setup.name"),
+              t("setup.character"),
+              t("setup.align"),
+              "",
+            ].map((h) => (
               <th
                 key={h}
                 style={{
@@ -174,7 +186,10 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
         <tbody>
           {names.map((name, i) => {
             const p = players[i];
-            const charName = p?.trueCharacter ?? "—";
+            const charId = p?.trueCharacter;
+            const charName = charId
+              ? t(`characters.${charId}`, { defaultValue: charId })
+              : "—";
             const isEvil =
               p?.alignment === "Minion" || p?.alignment === "Demon";
             return (
@@ -205,7 +220,13 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
                   {charName}
                   {p?.isDrunk && (
                     <span style={{ color: "#a05000", marginLeft: 6 }}>
-                      (believes: {p.perceivedCharacter})
+                      (
+                      {t("setup.believes", {
+                        character: t(`characters.${p.perceivedCharacter}`, {
+                          defaultValue: p.perceivedCharacter,
+                        }),
+                      })}
+                      )
                     </span>
                   )}
                 </td>
@@ -235,9 +256,9 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <button onClick={addPlayer} disabled={names.length >= 15}>
-          + Add Player
+          {t("setup.add_player")}
         </button>
-        <button onClick={reroll}>↺ Re-roll Characters</button>
+        <button onClick={reroll}>{t("setup.reroll")}</button>
         <button
           onClick={handleStart}
           disabled={!valid}
@@ -248,13 +269,13 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
             padding: "4px 16px",
           }}
         >
-          ▶ Start Game
+          {t("setup.start_game")}
         </button>
       </div>
 
       {!valid && (
         <p style={{ color: "crimson", fontSize: 13 }}>
-          Trouble Brewing requires 5–15 players.
+          {t("setup.player_count_error")}
         </p>
       )}
     </div>
@@ -272,12 +293,13 @@ function PhaseBar({
   state: GameState;
   dispatch: (a: Action) => void;
 }): React.ReactElement {
+  const { t } = useTranslation();
   const { phase, day, winner } = state;
 
   return (
     <div>
-      <strong>Phase:</strong> {phase} &nbsp;
-      <strong>Day:</strong> {day}
+      <strong>{t("phase_bar.phase")}</strong> {phase} &nbsp;
+      <strong>{t("phase_bar.day")}</strong> {day}
       {winner && (
         <span
           style={{
@@ -290,7 +312,7 @@ function PhaseBar({
             borderRadius: 4,
           }}
         >
-          🏆 {winner.toUpperCase()} WINS — Game Over
+          🏆 {t("phase_bar.wins", { winner: winner.toUpperCase() })}
         </span>
       )}
       {!winner && (
@@ -299,19 +321,19 @@ function PhaseBar({
             !state.pendingRavenkeeperChoice &&
             !state.pendingMinionPromotion && (
               <button onClick={() => dispatch({ type: "resolve-night" })}>
-                Resolve Night (→ Day {day + 1})
+                {t("phase_bar.resolve_night", { day: day + 1 })}
               </button>
             )}
           {phase === "day" && (
             <>
               <button onClick={() => dispatch({ type: "skip-execution" })}>
-                End Day (No Execution)
+                {t("phase_bar.end_day")}
               </button>
               <button
                 style={{ marginLeft: 8 }}
                 onClick={() => dispatch({ type: "advance-to-night" })}
               >
-                Advance to Night
+                {t("phase_bar.advance_to_night")}
               </button>
             </>
           )}
@@ -332,25 +354,28 @@ function GrimoireTable({
   state: GameState;
   dispatch: (a: Action) => void;
 }): React.ReactElement {
+  const { t } = useTranslation();
   const { grimoire } = state;
+
+  const columns = [
+    t("grimoire.seat"),
+    t("grimoire.name"),
+    t("grimoire.character"),
+    t("grimoire.align"),
+    t("grimoire.alive"),
+    t("grimoire.poisoned"),
+    t("grimoire.drunk"),
+    t("grimoire.protected"),
+    t("grimoire.ghost"),
+  ];
 
   return (
     <div>
-      <h2>Grimoire</h2>
+      <h2>{t("grimoire.title")}</h2>
       <table style={{ borderCollapse: "collapse", width: "100%" }}>
         <thead>
           <tr>
-            {[
-              "Seat",
-              "Name",
-              "Character",
-              "Align",
-              "Alive",
-              "Poisoned",
-              "Drunk",
-              "Protected",
-              "Ghost",
-            ].map((h) => (
+            {columns.map((h) => (
               <th
                 key={h}
                 style={{
@@ -376,15 +401,20 @@ function GrimoireTable({
         </tbody>
       </table>
       <div style={{ marginTop: 8, fontSize: 12, color: "#666" }}>
-        Imp target: {grimoire.impTarget ?? "—"} &nbsp;|&nbsp; Monk protecting:{" "}
-        {grimoire.monkProtectionTarget ?? "—"} &nbsp;|&nbsp; Poisoner target:{" "}
-        {grimoire.poisonerTarget ?? "—"} &nbsp;|&nbsp; Butler master:{" "}
-        {grimoire.butlerMaster ?? "—"} &nbsp;|&nbsp; FT red herring:{" "}
+        {t("grimoire.imp_target")}: {grimoire.impTarget ?? "—"} &nbsp;|&nbsp;{" "}
+        {t("grimoire.monk_protecting")}: {grimoire.monkProtectionTarget ?? "—"}{" "}
+        &nbsp;|&nbsp; {t("grimoire.poisoner_target")}:{" "}
+        {grimoire.poisonerTarget ?? "—"} &nbsp;|&nbsp;{" "}
+        {t("grimoire.butler_master")}: {grimoire.butlerMaster ?? "—"}{" "}
+        &nbsp;|&nbsp; {t("grimoire.ft_red_herring")}:{" "}
         {grimoire.fortuneTellerRedHerring ?? "—"}
       </div>
       {grimoire.demonBluffs.length > 0 && (
         <div style={{ marginTop: 4, fontSize: 12, color: "#800" }}>
-          Demon bluffs: {grimoire.demonBluffs.join(", ")}
+          {t("grimoire.demon_bluffs")}:{" "}
+          {grimoire.demonBluffs
+            .map((id) => t(`characters.${id}`, { defaultValue: id }))
+            .join(", ")}
         </div>
       )}
     </div>
@@ -400,6 +430,7 @@ function PlayerRow({
   state: GameState;
   dispatch: (a: Action) => void;
 }): React.ReactElement {
+  const { t } = useTranslation();
   const {
     id,
     seatIndex,
@@ -444,7 +475,7 @@ function PlayerRow({
           {name}
         </span>,
       )}
-      {cell(trueCharacter)}
+      {cell(t(`characters.${trueCharacter}`, { defaultValue: trueCharacter }))}
       {cell(
         <span
           style={{
@@ -486,11 +517,14 @@ function NightPanel({
   state: GameState;
   dispatch: (a: Action) => void;
 }): React.ReactElement {
+  const { t } = useTranslation();
+
   return (
     <div>
       <h2>
-        Night Phase —{" "}
-        {state.phase === "first-night" ? "Night 1" : `Night ${state.day}`}
+        {state.phase === "first-night"
+          ? t("night.title_night1")
+          : t("night.title_nightN", { day: state.day })}
       </h2>
 
       {/* Pending blocking actions take priority */}
@@ -529,6 +563,39 @@ function NightPanel({
   );
 }
 
+// Map engine pre-step labels to translation keys
+function translatePreStep(
+  label: string,
+  description: string,
+  t: (key: string) => string,
+): { label: string; description: string } {
+  if (label === "Minion Info") {
+    return {
+      label: t("night.pre_steps.minion_info"),
+      description: t("night.pre_steps.minion_info_desc"),
+    };
+  }
+  if (label === "Minion Info (skipped)") {
+    return {
+      label: t("night.pre_steps.minion_info_skip"),
+      description: t("night.pre_steps.minion_info_skip_desc"),
+    };
+  }
+  if (label === "Demon Info") {
+    return {
+      label: t("night.pre_steps.demon_info"),
+      description: t("night.pre_steps.demon_info_desc"),
+    };
+  }
+  if (label === "Demon Info (skipped)") {
+    return {
+      label: t("night.pre_steps.demon_info_skip"),
+      description: t("night.pre_steps.demon_info_skip_desc"),
+    };
+  }
+  return { label, description };
+}
+
 function NightOrderPanel({
   state,
   dispatch,
@@ -536,6 +603,7 @@ function NightOrderPanel({
   state: GameState;
   dispatch: (a: Action) => void;
 }): React.ReactElement {
+  const { t } = useTranslation();
   const { grimoire, phase } = state;
   const [doneSteps, setDoneSteps] = useState<Set<string>>(new Set());
 
@@ -561,10 +629,15 @@ function NightOrderPanel({
       {/* Pre-character steps (night 1 only) */}
       {preSteps.length > 0 && (
         <div style={{ marginBottom: 12 }}>
-          <strong>Pre-character steps:</strong>
+          <strong>{t("night.pre_steps_heading")}</strong>
           {preSteps.map((step, i) => {
             const key = `pre-${i}`;
             const done = doneSteps.has(key);
+            const translated = translatePreStep(
+              step.label,
+              step.description,
+              t,
+            );
             return (
               <div
                 key={key}
@@ -584,10 +657,10 @@ function NightOrderPanel({
                     onChange={() => toggleDone(key)}
                     style={{ marginRight: 6 }}
                   />
-                  <strong>{step.label}</strong>
+                  <strong>{translated.label}</strong>
                 </label>
                 <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>
-                  {step.description}
+                  {translated.description}
                 </div>
               </div>
             );
@@ -596,11 +669,9 @@ function NightOrderPanel({
       )}
 
       {/* Character night steps */}
-      <strong>Character steps:</strong>
+      <strong>{t("night.char_steps_heading")}</strong>
       {charSteps.length === 0 && (
-        <p style={{ color: "#888", fontSize: 13 }}>
-          No character steps this night.
-        </p>
+        <p style={{ color: "#888", fontSize: 13 }}>{t("night.no_steps")}</p>
       )}
       {charSteps.map((step) => {
         const key = `char-${step.player.id}`;
@@ -653,6 +724,7 @@ function NightStepCard({
   dispatch: (a: Action) => void;
   toggleDone: (key: string) => void;
 }): React.ReactElement {
+  const { t } = useTranslation();
   const alivePlayers = state.grimoire.players.filter((p) => p.isAlive);
   const [target1, setTarget1] = useState(alivePlayers[0]?.id ?? "");
   const [target2, setTarget2] = useState(alivePlayers[1]?.id ?? "");
@@ -680,6 +752,13 @@ function NightStepCard({
     toggleDone(stepKey);
   };
 
+  const charName = t(`characters.${step.character}`, {
+    defaultValue: step.character,
+  });
+  const actionText = t(`night.actions.${step.character}`, {
+    defaultValue: step.action,
+  });
+
   return (
     <div
       style={{
@@ -699,13 +778,11 @@ function NightStepCard({
             onChange={() => toggleDone(stepKey)}
           />
         )}
-        <strong style={{ textTransform: "capitalize" }}>
-          {step.character}
-        </strong>
+        <strong style={{ textTransform: "capitalize" }}>{charName}</strong>
         <span style={{ color: "#666" }}>— {step.player.name}</span>
       </div>
       <div style={{ fontSize: 12, color: "#555", margin: "4px 0 6px 20px" }}>
-        {step.action}
+        {actionText}
       </div>
 
       {needsDispatch && !done && (
@@ -744,7 +821,7 @@ function NightStepCard({
               ))}
             </select>
           )}
-          <button onClick={handleDispatch}>Confirm choice</button>
+          <button onClick={handleDispatch}>{t("night.confirm_choice")}</button>
         </div>
       )}
 
@@ -769,11 +846,11 @@ function NightStepCard({
           }}
         >
           <div style={{ fontSize: 12, fontWeight: "bold", marginBottom: 4 }}>
-            Send info to {step.player.name}
+            {t("night.send_info_to", { name: step.player.name })}
           </div>
           {infoSent ? (
             <div style={{ fontSize: 12, color: "#389e0d" }}>
-              ✓ Info sent to {step.player.name}
+              {t("night.info_sent", { name: step.player.name })}
             </div>
           ) : (
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -781,7 +858,7 @@ function NightStepCard({
                 type="text"
                 value={infoText}
                 onChange={(e) => setInfoText(e.target.value)}
-                placeholder="Compose info for this player…"
+                placeholder={t("night.compose_info")}
                 style={{ flex: 1, fontSize: 12, padding: "2px 6px" }}
               />
               <button
@@ -789,7 +866,7 @@ function NightStepCard({
                 disabled={infoText.trim() === ""}
                 style={{ fontSize: 12 }}
               >
-                Send
+                {t("night.send")}
               </button>
             </div>
           )}
@@ -810,6 +887,7 @@ function FortuneTellerHelper({
   state: GameState;
   toggleDone: () => void;
 }): React.ReactElement {
+  const { t } = useTranslation();
   const allPlayers = state.grimoire.players;
   const [pick1, setPick1] = useState(allPlayers[0]?.id ?? "");
   const [pick2, setPick2] = useState(allPlayers[1]?.id ?? "");
@@ -832,7 +910,7 @@ function FortuneTellerHelper({
       }}
     >
       <div style={{ fontSize: 12, fontWeight: "bold", marginBottom: 4 }}>
-        Fortune Teller checks 2 players
+        {t("night.ft_checks_2")}
       </div>
       <div
         style={{
@@ -876,15 +954,16 @@ function FortuneTellerHelper({
             border: `1px solid ${isYes ? "#b7eb8f" : "#ffa39e"}`,
           }}
         >
-          Answer: {isYes ? "YES" : "NO"}
+          {t("night.ft_answer", {
+            answer: isYes ? t("night.yes") : t("night.no"),
+          })}
         </span>
         <button onClick={toggleDone} style={{ fontSize: 12 }}>
-          ✓ Done
+          {t("night.done")}
         </button>
       </div>
       <div style={{ fontSize: 11, color: "#666", marginTop: 4 }}>
-        Red herring: {redHerring ?? "—"} &nbsp;|&nbsp; YES if either pick is the
-        Demon or red herring
+        {t("night.ft_red_herring", { herring: redHerring ?? "—" })}
       </div>
     </div>
   );
@@ -901,6 +980,7 @@ function MayorRedirectPrompt({
   state: GameState;
   dispatch: (a: Action) => void;
 }): React.ReactElement {
+  const { t } = useTranslation();
   const alivePlayers = state.grimoire.players.filter(
     (p) => p.isAlive && p.trueCharacter !== "mayor",
   );
@@ -918,10 +998,9 @@ function MayorRedirectPrompt({
         background: "#fffbe6",
       }}
     >
-      <strong>Mayor ability — Imp targeted the Mayor!</strong>
+      <strong>{t("mayor_prompt.title")}</strong>
       <p style={{ fontSize: 13, margin: "4px 0" }}>
-        The Mayor is alive and healthy. You may redirect the kill to another
-        player, or let the Mayor die.
+        {t("mayor_prompt.description")}
       </p>
       <div
         style={{
@@ -935,7 +1014,7 @@ function MayorRedirectPrompt({
           value={redirectId ?? ""}
           onChange={(e) => setRedirectId(e.target.value || null)}
         >
-          <option value="">— Mayor dies (no redirect) —</option>
+          <option value="">{t("mayor_prompt.no_redirect")}</option>
           {alivePlayers.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -950,14 +1029,16 @@ function MayorRedirectPrompt({
             })
           }
         >
-          Set redirect
+          {t("mayor_prompt.set_redirect")}
         </button>
         {state.grimoire.mayorRedirectTarget && (
           <span style={{ color: "green", fontSize: 13 }}>
-            ✓ Redirect set →{" "}
-            {state.grimoire.players.find(
-              (p) => p.id === state.grimoire.mayorRedirectTarget,
-            )?.name ?? state.grimoire.mayorRedirectTarget}
+            {t("mayor_prompt.redirect_set", {
+              name:
+                state.grimoire.players.find(
+                  (p) => p.id === state.grimoire.mayorRedirectTarget,
+                )?.name ?? state.grimoire.mayorRedirectTarget,
+            })}
           </span>
         )}
       </div>
@@ -972,6 +1053,7 @@ function RavenkeeperChoicePrompt({
   state: GameState;
   dispatch: (a: Action) => void;
 }): React.ReactElement {
+  const { t } = useTranslation();
   const allPlayers = state.grimoire.players;
   const [targetId, setTargetId] = useState(allPlayers[0]?.id ?? "");
 
@@ -985,16 +1067,15 @@ function RavenkeeperChoicePrompt({
         background: "#fff5f5",
       }}
     >
-      <strong>Ravenkeeper died tonight — choose a player to reveal</strong>
+      <strong>{t("ravenkeeper_prompt.title")}</strong>
       <p style={{ fontSize: 13, margin: "4px 0" }}>
-        Wake the Ravenkeeper. They point at any player (alive or dead). Show
-        that player's character token privately.
+        {t("ravenkeeper_prompt.description")}
       </p>
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <select value={targetId} onChange={(e) => setTargetId(e.target.value)}>
           {allPlayers.map((p) => (
             <option key={p.id} value={p.id}>
-              {p.name} {!p.isAlive ? "(dead)" : ""}
+              {p.name} {!p.isAlive ? `(${t("player.dead")})` : ""}
             </option>
           ))}
         </select>
@@ -1002,15 +1083,21 @@ function RavenkeeperChoicePrompt({
           onClick={() => dispatch({ type: "ravenkeeper-choice", targetId })}
           disabled={!targetId}
         >
-          Confirm Ravenkeeper choice
+          {t("ravenkeeper_prompt.confirm")}
         </button>
       </div>
       {targetId && (
         <div style={{ marginTop: 6, fontSize: 13, color: "#555" }}>
-          Character to reveal:{" "}
+          {t("ravenkeeper_prompt.character_to_reveal")}{" "}
           <strong>
-            {state.grimoire.players.find((p) => p.id === targetId)
-              ?.trueCharacter ?? "—"}
+            {(() => {
+              const charId = state.grimoire.players.find(
+                (p) => p.id === targetId,
+              )?.trueCharacter;
+              return charId
+                ? t(`characters.${charId}`, { defaultValue: charId })
+                : "—";
+            })()}
           </strong>
         </div>
       )}
@@ -1025,6 +1112,7 @@ function MinionPromotionPrompt({
   state: GameState;
   dispatch: (a: Action) => void;
 }): React.ReactElement {
+  const { t } = useTranslation();
   const aliveMinions = state.grimoire.players.filter(
     (p) => p.isAlive && p.alignment === "Minion",
   );
@@ -1040,13 +1128,12 @@ function MinionPromotionPrompt({
         background: "#fff5f5",
       }}
     >
-      <strong>Imp self-killed — choose which Minion becomes the new Imp</strong>
+      <strong>{t("minion_promotion.title")}</strong>
       <p style={{ fontSize: 13, margin: "4px 0" }}>
-        No Scarlet Woman was eligible. Choose a living Minion to become the new
-        Demon. Show them the Imp token secretly.
+        {t("minion_promotion.description")}
       </p>
       {aliveMinions.length === 0 ? (
-        <p style={{ color: "crimson" }}>No living Minions — good wins!</p>
+        <p style={{ color: "crimson" }}>{t("minion_promotion.no_minions")}</p>
       ) : (
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <select
@@ -1055,7 +1142,11 @@ function MinionPromotionPrompt({
           >
             {aliveMinions.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.name} ({p.trueCharacter})
+                {p.name} (
+                {t(`characters.${p.trueCharacter}`, {
+                  defaultValue: p.trueCharacter,
+                })}
+                )
               </option>
             ))}
           </select>
@@ -1065,7 +1156,7 @@ function MinionPromotionPrompt({
             }
             disabled={!minionId}
           >
-            Promote to Imp
+            {t("minion_promotion.promote")}
           </button>
         </div>
       )}
@@ -1084,6 +1175,7 @@ function DayControls({
   state: GameState;
   dispatch: (a: Action) => void;
 }): React.ReactElement {
+  const { t } = useTranslation();
   const { phase, grimoire, voting, executionCandidateId, winner } = state;
 
   if (phase !== "day" || winner) return <></>;
@@ -1092,22 +1184,22 @@ function DayControls({
 
   return (
     <div>
-      <h2>Day Controls</h2>
+      <h2>{t("day_controls.title")}</h2>
 
       {/* Execution candidate */}
       {executionCandidateId && (
         <div style={{ marginBottom: 8 }}>
-          <strong>Execution candidate:</strong>{" "}
+          <strong>{t("day_controls.execution_candidate")}</strong>{" "}
           {grimoire.players.find((p) => p.id === executionCandidateId)?.name ??
             executionCandidateId}{" "}
-          ({state.executionCandidateVotes} votes)
+          ({t("day_controls.votes", { count: state.executionCandidateVotes })})
           <button
             style={{ marginLeft: 8 }}
             onClick={() =>
               dispatch({ type: "execute", targetId: executionCandidateId })
             }
           >
-            Execute
+            {t("day_controls.execute")}
           </button>
         </div>
       )}
@@ -1135,6 +1227,7 @@ function NominationForm({
   dispatch: (a: Action) => void;
   alive: Player[];
 }): React.ReactElement {
+  const { t } = useTranslation();
   const [nominatorId, setNominatorId] = useState(alive[0]?.id ?? "");
   const [targetId, setTargetId] = useState(alive[0]?.id ?? "");
 
@@ -1147,7 +1240,7 @@ function NominationForm({
 
   return (
     <div>
-      <strong>Nominate:</strong>
+      <strong>{t("day_controls.nominate")}:</strong>
       <select
         value={nominatorId}
         onChange={(e) => setNominatorId(e.target.value)}
@@ -1159,7 +1252,7 @@ function NominationForm({
           </option>
         ))}
       </select>
-      nominates
+      {t("day_controls.nominates")}
       <select
         value={targetId}
         onChange={(e) => setTargetId(e.target.value)}
@@ -1175,7 +1268,7 @@ function NominationForm({
         onClick={() => dispatch({ type: "nominate", nominatorId, targetId })}
         disabled={!nominatorId || !targetId || nominatorId === targetId}
       >
-        Nominate
+        {t("day_controls.nominate")}
       </button>
     </div>
   );
@@ -1188,6 +1281,7 @@ function VotePanel({
   state: GameState;
   dispatch: (a: Action) => void;
 }): React.ReactElement {
+  const { t } = useTranslation();
   const { voting, grimoire } = state;
   if (!voting) return <></>;
 
@@ -1205,13 +1299,15 @@ function VotePanel({
 
   return (
     <div style={{ border: "1px solid #aaa", padding: 12, marginTop: 8 }}>
-      <strong>Vote in progress:</strong> execution of {targetName}
+      <strong>{t("day_controls.vote_in_progress")}</strong>{" "}
+      {t("day_controls.execution_of", { name: targetName })}
       <br />
-      Threshold: {threshold} &nbsp;|&nbsp; YES so far: {yesCount}
+      {t("day_controls.threshold")}: {threshold} &nbsp;|&nbsp;{" "}
+      {t("day_controls.yes_so_far")}: {yesCount}
       <br />
       {pendingVoters.length > 0 && (
         <div style={{ marginTop: 8 }}>
-          <strong>Next voter:</strong>{" "}
+          <strong>{t("day_controls.next_voter")}</strong>{" "}
           {grimoire.players.find((p) => p.id === pendingVoters[0])?.name ??
             pendingVoters[0]}
           <button
@@ -1220,7 +1316,7 @@ function VotePanel({
               dispatch({ type: "vote", playerId: pendingVoters[0], vote: true })
             }
           >
-            YES
+            {t("day_controls.yes")}
           </button>
           <button
             style={{ marginLeft: 4 }}
@@ -1232,7 +1328,7 @@ function VotePanel({
               })
             }
           >
-            NO
+            {t("day_controls.no")}
           </button>
         </div>
       )}
@@ -1248,6 +1344,8 @@ function VoteTally({
   voting: NonNullable<GameState["voting"]>;
   grimoire: GameState["grimoire"];
 }): React.ReactElement {
+  const { t } = useTranslation();
+
   return (
     <table style={{ marginTop: 8, fontSize: 12 }}>
       <tbody>
@@ -1257,7 +1355,13 @@ function VoteTally({
           return (
             <tr key={id}>
               <td style={{ paddingRight: 8 }}>{name}</td>
-              <td>{vote === undefined ? "—" : vote ? "✅ YES" : "❌ NO"}</td>
+              <td>
+                {vote === undefined
+                  ? "—"
+                  : vote
+                    ? `✅ ${t("day_controls.yes")}`
+                    : `❌ ${t("day_controls.no")}`}
+              </td>
             </tr>
           );
         })}
@@ -1275,6 +1379,7 @@ function SlayerPanel({
   dispatch: (a: Action) => void;
   alive: Player[];
 }): React.ReactElement {
+  const { t } = useTranslation();
   const [targetId, setTargetId] = useState(alive[0]?.id ?? "");
 
   const slayer = state.grimoire.players.find(
@@ -1285,7 +1390,7 @@ function SlayerPanel({
 
   return (
     <div style={{ marginTop: 12 }}>
-      <strong>Slayer ({slayer.name}):</strong>
+      <strong>{t("slayer_st.label", { name: slayer.name })}</strong>
       <select
         value={targetId}
         onChange={(e) => setTargetId(e.target.value)}
@@ -1306,7 +1411,7 @@ function SlayerPanel({
           })
         }
       >
-        Slayer: Shoot!
+        {t("slayer_st.shoot")}
       </button>
     </div>
   );
