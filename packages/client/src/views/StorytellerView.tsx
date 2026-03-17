@@ -33,7 +33,6 @@ interface Props {
 }
 
 export function StorytellerView({ state, send }: Props): React.ReactElement {
-  const { t } = useTranslation();
   const dispatch = (action: Action) =>
     send({ type: "action", payload: action });
 
@@ -42,10 +41,10 @@ export function StorytellerView({ state, send }: Props): React.ReactElement {
   return (
     <div className="min-h-screen text-slate-100 px-4 py-6 font-sans">
       <h1 className="text-2xl font-bold mb-6 pr-16">
-        <span className="bg-gradient-to-r from-rose-300 via-amber-200 to-orange-300 bg-clip-text text-transparent">
-          {t("app.title")}
-        </span>{" "}
-        <span className="text-slate-600 font-normal text-lg">
+        <span className="text-rose-400">Blood</span>
+        <span className="text-white"> on the Clocktower</span>
+        <span className="text-zinc-600 font-normal text-base">
+          {" "}
           — Storyteller
         </span>
       </h1>
@@ -306,14 +305,11 @@ function PhaseBar({
   const { phase, day, winner } = state;
 
   const phaseColors: Record<string, string> = {
-    "first-night":
-      "bg-indigo-500/15 text-indigo-300 border border-indigo-400/30 shadow-[0_0_12px_rgba(99,102,241,0.2)]",
-    night:
-      "bg-indigo-500/15 text-indigo-300 border border-indigo-400/30 shadow-[0_0_12px_rgba(99,102,241,0.2)]",
-    day: "bg-amber-500/15 text-amber-300 border border-amber-400/30 shadow-[0_0_12px_rgba(251,191,36,0.15)]",
+    "first-night": "badge-night",
+    night: "badge-night",
+    day: "badge-day",
   };
-  const phaseClass =
-    phaseColors[phase] ?? "bg-white/10 text-slate-300 border border-white/20";
+  const phaseClass = phaseColors[phase] ?? "badge-night";
 
   return (
     <div className="flex items-center gap-4 flex-wrap">
@@ -335,9 +331,7 @@ function PhaseBar({
         <span
           className={cx(
             "px-4 py-1.5 rounded-lg font-bold text-sm",
-            winner === "good"
-              ? "bg-sky-500/15 text-sky-300 border border-sky-400/35 shadow-[0_0_14px_rgba(56,189,248,0.2)]"
-              : "bg-rose-500/15 text-rose-300 border border-rose-400/35 shadow-[0_0_14px_rgba(251,113,133,0.2)]",
+            winner === "good" ? "badge-good" : "badge-evil",
           )}
         >
           🏆 {t("phase_bar.wins", { winner: winner.toUpperCase() })}

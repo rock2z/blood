@@ -45,24 +45,23 @@ export function PlayerView({
       <div className="max-w-md mx-auto px-4 py-6 pb-20">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 pr-16">
-          <h1 className="text-xl font-bold">
-            <span className="bg-gradient-to-r from-rose-300 via-amber-200 to-orange-300 bg-clip-text text-transparent">
-              {t("player.title")}
-            </span>
+          <h1 className="text-sm font-bold whitespace-nowrap">
+            <span className="text-rose-400">Blood</span>
+            <span className="text-white"> on the Clocktower</span>
           </h1>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <span
               className={cx(
-                "text-xs px-2.5 py-1 rounded-lg capitalize font-medium border",
                 phase === "first-night" || phase === "night"
-                  ? "bg-indigo-500/15 text-indigo-300 border-indigo-400/25"
-                  : "bg-amber-500/15 text-amber-300 border-amber-400/25",
+                  ? "badge-night"
+                  : "badge-day",
+                "capitalize",
               )}
             >
               {phase}
             </span>
-            <span className="text-xs text-slate-600">
-              {t("player.day")} {day}
+            <span className="text-xs text-zinc-600 font-mono tabular-nums">
+              D{day}
             </span>
           </div>
         </div>
@@ -71,10 +70,10 @@ export function PlayerView({
         {winner && (
           <div
             className={cx(
-              "mb-6 p-4 rounded-2xl text-center text-lg font-bold border-2 backdrop-blur-sm",
+              "mb-6 p-4 rounded-2xl text-center text-base font-bold",
               winner === "good"
-                ? "bg-sky-900/40 border-sky-400/50 text-sky-300 shadow-[0_0_24px_rgba(56,189,248,0.2)]"
-                : "bg-rose-900/40 border-rose-400/50 text-rose-300 shadow-[0_0_24px_rgba(251,113,133,0.2)]",
+                ? "bg-sky-950 ring-1 ring-inset ring-sky-500/40 text-sky-300"
+                : "bg-rose-950 ring-1 ring-inset ring-rose-500/40 text-rose-300",
             )}
           >
             🏆 {t("player.wins", { winner: winner.toUpperCase() })}
@@ -125,34 +124,27 @@ function MyCharacterCard({
   return (
     <div
       className={cx(
-        "rounded-2xl p-6 mb-5 border backdrop-blur-sm",
+        "rounded-2xl p-5 mb-5",
         isEvil
-          ? "border-rose-400/40 bg-gradient-to-br from-rose-950/60 via-black/40 to-black/60 shadow-[0_0_36px_rgba(251,113,133,0.15),inset_0_1px_0_rgba(251,113,133,0.1)]"
-          : "border-sky-400/40 bg-gradient-to-br from-sky-950/60 via-black/40 to-black/60 shadow-[0_0_36px_rgba(56,189,248,0.15),inset_0_1px_0_rgba(56,189,248,0.1)]",
+          ? "bg-rose-950 ring-1 ring-inset ring-rose-500/30 shadow-[0_0_40px_rgba(244,63,94,0.18)]"
+          : "bg-sky-950 ring-1 ring-inset ring-sky-500/30 shadow-[0_0_40px_rgba(56,189,248,0.18)]",
       )}
     >
-      <div className="section-label mb-2">{t("player.your_character")}</div>
-      <div className="text-4xl font-bold text-white capitalize mt-1 mb-1 tracking-tight">
+      <div className="section-label mb-3">{t("player.your_character")}</div>
+      <div className="text-3xl font-black text-white capitalize tracking-tight leading-tight mb-3">
         {t(`characters.${myCharacter}`, { defaultValue: myCharacter })}
       </div>
-      <div
-        className={cx(
-          "text-sm font-semibold tracking-wide",
-          isEvil ? "text-rose-400" : "text-sky-400",
-        )}
-      >
+      <span className={isEvil ? "badge-evil" : "badge-good"}>
         {isEvil ? t("player.evil") : t("player.good")}
-      </div>
+      </span>
 
       {myDemonBluffs && myDemonBluffs.length > 0 && (
-        <div className="mt-3 p-3 bg-red-950/40 border border-red-800/60 rounded-lg">
-          <div className="text-xs font-bold text-red-400 uppercase tracking-wider mb-1">
-            {t("player.demon_bluffs")}
-          </div>
-          <div className="text-sm text-red-300">
+        <div className="mt-4 pt-4 border-t border-rose-500/20">
+          <div className="section-label mb-2">{t("player.demon_bluffs")}</div>
+          <div className="text-sm text-rose-300 font-medium">
             {myDemonBluffs
               .map((id) => t(`characters.${id}`, { defaultValue: id }))
-              .join(", ")}
+              .join(" · ")}
           </div>
         </div>
       )}
@@ -188,7 +180,7 @@ function PlayerList({
                 isCandidate && "bg-rose-950/40",
               )}
             >
-              <span className="text-slate-700 text-xs w-5 text-right shrink-0 font-mono">
+              <span className="text-xs w-5 h-5 rounded-full bg-white/[0.05] text-zinc-500 flex items-center justify-center shrink-0 font-mono tabular-nums">
                 {p.seatIndex + 1}
               </span>
               <span
@@ -200,7 +192,7 @@ function PlayerList({
                 {p.name}
               </span>
               {!p.isAlive && (
-                <span className="text-xs text-slate-600 bg-white/[0.04] border border-white/[0.07] px-2 py-0.5 rounded-md">
+                <span className="text-xs text-zinc-600 bg-zinc-800 px-2 py-0.5 rounded-full ring-1 ring-inset ring-white/[0.06]">
                   {p.ghostVoteUsed
                     ? t("player.dead_vote_used")
                     : t("player.dead")}
