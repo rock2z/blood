@@ -4,9 +4,9 @@
   "description": "Blood on the Clocktower — React client (Storyteller + player views)",
   "scripts": {
     "predev": "npm run build -w @botc/engine",
-    "dev": "npx vite",
+    "dev": "vite",
     "prebuild": "npm run build -w @botc/engine",
-    "build": "npx tsc && npx vite build",
+    "build": "tsc && vite build",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit"
   },
