@@ -66,8 +66,8 @@ export interface PlayerSnapshot {
   executionCandidateVotes: GameState["executionCandidateVotes"];
   nominatorsUsed: GameState["nominatorsUsed"];
   nominatedToday: GameState["nominatedToday"];
+  /** Only true for the Ravenkeeper player when they must submit their choice */
   pendingRavenkeeperChoice: boolean;
-  pendingMinionPromotion: boolean;
   grimoire: PlayerGrimoire;
 }
 
