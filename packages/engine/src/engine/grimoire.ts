@@ -242,20 +242,24 @@ export function executePlayer(
 
 /**
  * When the Demon dies, check if the Scarlet Woman should take over.
- * Returns null if Scarlet Woman is not eligible.
+ * Returns activated=false if Scarlet Woman is not eligible.
+ * Returns activatedPlayerId when activation occurs (for log events at call sites).
  */
 export function tryActivateScarletWoman(grimoire: Grimoire): {
   grimoire: Grimoire;
   activated: boolean;
+  activatedPlayerId: PlayerId | null;
 } {
   const alive = getAlivePlayers(grimoire);
   const sw = alive.find((p) => p.trueCharacter === "scarletwoman");
 
-  if (!sw) return { grimoire, activated: false };
-  if (sw.isPoisoned || sw.isDrunk) return { grimoire, activated: false };
+  if (!sw) return { grimoire, activated: false, activatedPlayerId: null };
+  if (sw.isPoisoned || sw.isDrunk)
+    return { grimoire, activated: false, activatedPlayerId: null };
 
   // Travellers don't count — in TB there are no Travellers, so alive.length is correct
-  if (alive.length < 5) return { grimoire, activated: false };
+  if (alive.length < 5)
+    return { grimoire, activated: false, activatedPlayerId: null };
 
   // Promote Scarlet Woman to Imp
   const players = grimoire.players.map((p) =>
@@ -268,5 +272,9 @@ export function tryActivateScarletWoman(grimoire: Grimoire): {
       : p,
   );
 
-  return { grimoire: { ...grimoire, players }, activated: true };
+  return {
+    grimoire: { ...grimoire, players },
+    activated: true,
+    activatedPlayerId: sw.id,
+  };
 }

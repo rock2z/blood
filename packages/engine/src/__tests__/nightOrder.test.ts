@@ -164,3 +164,119 @@ describe("getFirstNightPreSteps", () => {
     expect(steps[0].label).toContain("skipped");
   });
 });
+
+// ============================================================
+// Drunk night order (regression: perceivedCharacter determines position)
+// ============================================================
+
+describe("getFirstNightOrder — Drunk uses perceivedCharacter position", () => {
+  test("Drunk perceived as Fortune Teller wakes at FT first-night position (10)", () => {
+    // Fortune Teller first-night order = 10; Chef = 8; Drunk (as FT) should appear between them.
+    const players = [
+      makePlayer({ id: "chef", trueCharacter: "chef" }), // firstNightOrder: 8
+      makePlayer({
+        id: "drunk",
+        trueCharacter: "drunk",
+        perceivedCharacter: "fortuneteller",
+        alignment: "Outsider",
+      }), // wakes at FT order 10
+      makePlayer({
+        id: "butler",
+        trueCharacter: "butler",
+        alignment: "Outsider",
+      }), // firstNightOrder: 11
+    ];
+    const g = createGrimoire(players);
+    const steps = getFirstNightOrder(g);
+    const chars = steps.map((s) => s.character);
+    // Drunk should appear after Chef (8) and before Butler (11)
+    expect(chars).toContain("drunk");
+    expect(chars.indexOf("drunk")).toBeGreaterThan(chars.indexOf("chef"));
+    expect(chars.indexOf("drunk")).toBeLessThan(chars.indexOf("butler"));
+  });
+
+  test("Drunk step uses 'drunk' as character, not the perceived character", () => {
+    const players = [
+      makePlayer({
+        id: "drunk",
+        trueCharacter: "drunk",
+        perceivedCharacter: "empath",
+        alignment: "Outsider",
+      }),
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+      }),
+    ];
+    const g = createGrimoire(players);
+    const steps = getFirstNightOrder(g);
+    // Empath has firstNightOrder 9 — Drunk perceived as Empath should appear
+    expect(steps.some((s) => s.character === "drunk")).toBe(true);
+    expect(steps.some((s) => s.character === "empath")).toBe(false);
+  });
+
+  test("Drunk perceived as character with no first-night action (e.g. Imp) is excluded", () => {
+    // If the Drunk thinks they're the Monk (no firstNightOrder), they don't wake.
+    const players = [
+      makePlayer({
+        id: "drunk",
+        trueCharacter: "drunk",
+        perceivedCharacter: "monk",
+        alignment: "Outsider",
+      }),
+      makePlayer({ id: "chef", trueCharacter: "chef" }),
+    ];
+    const g = createGrimoire(players);
+    const steps = getFirstNightOrder(g);
+    expect(steps.some((s) => s.character === "drunk")).toBe(false);
+  });
+});
+
+describe("getEachNightOrder — Drunk uses perceivedCharacter position", () => {
+  test("Drunk perceived as Empath wakes at Empath each-night position (6)", () => {
+    const players = [
+      makePlayer({
+        id: "poisoner",
+        trueCharacter: "poisoner",
+        alignment: "Minion",
+      }), // order 1
+      makePlayer({ id: "imp", trueCharacter: "imp", alignment: "Demon" }), // order 4
+      makePlayer({
+        id: "drunk",
+        trueCharacter: "drunk",
+        perceivedCharacter: "empath",
+        alignment: "Outsider",
+      }), // wakes at Empath order 6
+      makePlayer({
+        id: "butler",
+        trueCharacter: "butler",
+        alignment: "Outsider",
+      }), // order 9
+    ];
+    const g = createGrimoire(players);
+    const steps = getEachNightOrder(g, false);
+    const chars = steps.map((s) => s.character);
+    expect(chars).toContain("drunk");
+    expect(chars.indexOf("drunk")).toBeGreaterThan(chars.indexOf("imp"));
+    expect(chars.indexOf("drunk")).toBeLessThan(chars.indexOf("butler"));
+  });
+
+  test("Drunk perceived as Monk is excluded from each-night order (Monk has no each-night action)", () => {
+    // Monk has eachNightOrder: 3 but timing "each-night-except-first" — it DOES have an order.
+    // Actually Monk eachNightOrder = 3 per data, so Drunk perceived as Monk should wake at 3.
+    // Let's use Soldier (no eachNightOrder) instead.
+    const players = [
+      makePlayer({
+        id: "drunk",
+        trueCharacter: "drunk",
+        perceivedCharacter: "soldier", // soldier has eachNightOrder: null
+        alignment: "Outsider",
+      }),
+      makePlayer({ id: "imp", trueCharacter: "imp", alignment: "Demon" }),
+    ];
+    const g = createGrimoire(players);
+    const steps = getEachNightOrder(g, false);
+    expect(steps.some((s) => s.character === "drunk")).toBe(false);
+  });
+});

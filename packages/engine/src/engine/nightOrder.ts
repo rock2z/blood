@@ -75,14 +75,17 @@ export function getEachNightOrder(
         player: rkPlayer,
         action: nightAction("ravenkeeper"),
       });
-      // Re-sort to place Ravenkeeper at its correct position (eachNightOrder: 5)
+      // Re-sort to place Ravenkeeper at its correct position (eachNightOrder: 5).
+      // For the Drunk, use perceivedCharacter's order.
       steps.sort((a, b) => {
+        const aLookup =
+          a.character === "drunk" ? a.player.perceivedCharacter : a.character;
+        const bLookup =
+          b.character === "drunk" ? b.player.perceivedCharacter : b.character;
         /* istanbul ignore next */
-        const aOrder =
-          TROUBLE_BREWING_CHARACTERS[a.character].eachNightOrder ?? 0;
+        const aOrder = TROUBLE_BREWING_CHARACTERS[aLookup].eachNightOrder ?? 0;
         /* istanbul ignore next */
-        const bOrder =
-          TROUBLE_BREWING_CHARACTERS[b.character].eachNightOrder ?? 0;
+        const bOrder = TROUBLE_BREWING_CHARACTERS[bLookup].eachNightOrder ?? 0;
         return aOrder - bOrder;
       });
     }
@@ -104,7 +107,14 @@ function buildSteps(
   const steps: NightStep[] = [];
 
   for (const player of players) {
-    const char = TROUBLE_BREWING_CHARACTERS[player.trueCharacter];
+    // The Drunk wakes at the night-order position of their perceived Townsfolk
+    // character (they believe they are that character). All other players use
+    // their trueCharacter for the order lookup.
+    const lookupId =
+      player.trueCharacter === "drunk"
+        ? player.perceivedCharacter
+        : player.trueCharacter;
+    const char = TROUBLE_BREWING_CHARACTERS[lookupId];
     /* istanbul ignore next */
     if (!char) continue;
 
@@ -118,13 +128,16 @@ function buildSteps(
     });
   }
 
-  // Sort by night order position (values are guaranteed non-null here because
-  // only characters with a non-null order were added to steps above)
+  // Sort by night order position. For the Drunk, use perceivedCharacter's order.
   steps.sort((a, b) => {
+    const aLookup =
+      a.character === "drunk" ? a.player.perceivedCharacter : a.character;
+    const bLookup =
+      b.character === "drunk" ? b.player.perceivedCharacter : b.character;
     /* istanbul ignore next */
-    const aOrder = orderSelector(TROUBLE_BREWING_CHARACTERS[a.character]) ?? 0;
+    const aOrder = orderSelector(TROUBLE_BREWING_CHARACTERS[aLookup]) ?? 0;
     /* istanbul ignore next */
-    const bOrder = orderSelector(TROUBLE_BREWING_CHARACTERS[b.character]) ?? 0;
+    const bOrder = orderSelector(TROUBLE_BREWING_CHARACTERS[bLookup]) ?? 0;
     return aOrder - bOrder;
   });
 

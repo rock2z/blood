@@ -343,6 +343,22 @@ describe("resolve-night — Imp self-kill (Scarlet Woman)", () => {
     expect(s.winner).toBeNull();
   });
 
+  test("scarlet-woman-activated event logged on Imp self-kill", () => {
+    // Regression: scarlet-woman-activated must appear in the game log when SW takes over.
+    let s = dayState(sixPlayers());
+    s = dispatch(s, { type: "advance-to-night" });
+    s = dispatch(s, {
+      type: "night-choice",
+      playerId: "imp",
+      targetIds: ["imp"],
+    });
+    s = dispatch(s, { type: "resolve-night" });
+
+    const swEvent = s.log.find((e) => e.type === "scarlet-woman-activated");
+    expect(swEvent).toBeDefined();
+    expect(swEvent!.payload).toMatchObject({ activatedPlayerId: "sw" });
+  });
+
   test("Scarlet Woman does NOT activate when fewer than 5 alive after death → pending minion promotion", () => {
     // 4 players: imp, sw, p1, p2 → after imp dies: 3 alive < 5, SW doesn't activate
     const players = [
@@ -1005,7 +1021,7 @@ describe("nominate — Virgin ability", () => {
     expect(s.grimoire.virginAbilityFired).toBe(true);
   });
 
-  test("Demon nominating Virgin does NOT trigger ability", () => {
+  test("Demon nominating Virgin does NOT trigger ability (but consumes it)", () => {
     const players = [
       makePlayer({
         id: "imp",
@@ -1028,11 +1044,13 @@ describe("nominate — Virgin ability", () => {
       targetId: "virgin",
     });
 
+    // Ability does not fire (nominator is Demon), but the first nomination
+    // still consumes the Virgin's ability — it cannot trigger on a later day.
     expect(s.voting).not.toBeNull();
-    expect(s.grimoire.virginAbilityFired).toBe(false);
+    expect(s.grimoire.virginAbilityFired).toBe(true);
   });
 
-  test("Minion nominating Virgin does NOT trigger ability", () => {
+  test("Minion nominating Virgin does NOT trigger ability (but consumes it)", () => {
     const players = [
       makePlayer({
         id: "imp",
@@ -1060,8 +1078,10 @@ describe("nominate — Virgin ability", () => {
       targetId: "virgin",
     });
 
+    // Ability does not fire (nominator is Minion), but the first nomination
+    // still consumes the Virgin's ability — it cannot trigger on a later day.
     expect(s.voting).not.toBeNull();
-    expect(s.grimoire.virginAbilityFired).toBe(false);
+    expect(s.grimoire.virginAbilityFired).toBe(true);
   });
 
   test("Virgin ability does NOT fire a second time", () => {
@@ -1146,6 +1166,67 @@ describe("nominate — Virgin ability", () => {
       targetId: "virgin",
     });
     expect(next.voting).not.toBeNull();
+  });
+
+  test("Poisoned Virgin: ability consumed on first nomination even though it didn't fire", () => {
+    // Regression: virginAbilityFired must be set even when the ability is
+    // poisoned, so a later Townsfolk nomination cannot re-trigger it.
+    const players = [
+      makePlayer({
+        id: "p1",
+        trueCharacter: "empath",
+        alignment: "Townsfolk",
+        seatIndex: 0,
+      }),
+      makePlayer({
+        id: "p2",
+        trueCharacter: "chef",
+        alignment: "Townsfolk",
+        seatIndex: 1,
+      }),
+      makePlayer({
+        id: "virgin",
+        trueCharacter: "virgin",
+        alignment: "Townsfolk",
+        isPoisoned: true,
+        seatIndex: 2,
+      }),
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 3,
+      }),
+    ];
+    let s = dayState(players);
+    // First nomination while poisoned — no execution, but ability is consumed
+    s = dispatch(s, {
+      type: "nominate",
+      nominatorId: "p1",
+      targetId: "virgin",
+    });
+    expect(s.voting).not.toBeNull();
+    expect(s.grimoire.virginAbilityFired).toBe(true);
+
+    // Resolve the vote without execution, then advance to next day
+    s = castAllNo(s);
+    s = dispatch(s, { type: "advance-to-night" });
+    s = dispatch(s, {
+      type: "night-choice",
+      playerId: "imp",
+      targetIds: ["p1"],
+    });
+    s = dispatch(s, { type: "resolve-night" });
+
+    // p2 (Townsfolk) nominates Virgin on day 2 — ability must NOT fire again
+    s = dispatch(s, {
+      type: "nominate",
+      nominatorId: "p2",
+      targetId: "virgin",
+    });
+    // Should produce a normal vote, not an immediate execution
+    expect(s.voting).not.toBeNull();
+    expect(s.grimoire.players.find((p) => p.id === "p2")!.isAlive).toBe(true);
   });
 });
 
@@ -2237,6 +2318,61 @@ describe("night-choice — Butler sets butlerMaster", () => {
       targetIds: ["master"],
     });
     expect(s.grimoire.butlerMaster).toBe("master");
+  });
+
+  test("advance-to-night clears butlerMaster so a silent Butler has no voting constraint next day", () => {
+    // Regression: butlerMaster must reset each night so that a Butler who does
+    // not submit a night-choice (dead, absent, etc.) imposes no constraint.
+    const players = [
+      makePlayer({
+        id: "butler",
+        trueCharacter: "butler",
+        alignment: "Outsider",
+        seatIndex: 0,
+      }),
+      makePlayer({ id: "master", seatIndex: 1 }),
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 2,
+      }),
+      makePlayer({ id: "target", seatIndex: 3 }),
+    ];
+    let s = firstNightState(players);
+    // Night 1: Butler sets master
+    s = dispatch(s, {
+      type: "night-choice",
+      playerId: "butler",
+      targetIds: ["master"],
+    });
+    expect(s.grimoire.butlerMaster).toBe("master");
+    s = dispatch(s, { type: "resolve-night" });
+
+    // Night 2: Butler does NOT submit a night-choice — master should be cleared
+    s = dispatch(s, { type: "advance-to-night" });
+    expect(s.grimoire.butlerMaster).toBeNull();
+
+    // (no Butler night-choice this night)
+    s = dispatch(s, {
+      type: "night-choice",
+      playerId: "imp",
+      targetIds: ["master"],
+    });
+    s = dispatch(s, { type: "resolve-night" });
+
+    // Day 2: Butler has no master — should be free to vote YES unimpeded
+    s = dispatch(s, {
+      type: "nominate",
+      nominatorId: "imp",
+      targetId: "target",
+    });
+    // Butler votes YES — with no master set, the constraint doesn't apply
+    for (const vid of s.voting!.eligibleVoterIds) {
+      s = dispatch(s, { type: "vote", playerId: vid, vote: true });
+    }
+    // Butler's YES should have counted: target becomes execution candidate
+    expect(s.executionCandidateId).toBe("target");
   });
 });
 
