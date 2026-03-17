@@ -1,0 +1,140 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    background: #050507;
+  }
+  body {
+    background: radial-gradient(
+      ellipse at 50% -10%,
+      #180d30 0%,
+      #09070f 45%,
+      #050507 70%
+    );
+    background-attachment: fixed;
+    @apply min-h-screen text-slate-100 antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+  }
+}
+
+@layer components {
+  /* ── Buttons ─────────────────────────────────────────── */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-semibold
+      rounded-xl transition-all duration-200 cursor-pointer gap-1.5
+      disabled:opacity-30 disabled:cursor-not-allowed select-none;
+  }
+  .btn-default {
+    @apply btn bg-zinc-800 text-zinc-200 ring-1 ring-inset ring-white/[0.08]
+      hover:bg-zinc-700 hover:text-white active:bg-zinc-800;
+  }
+  .btn-primary {
+    @apply btn bg-indigo-600 text-white ring-1 ring-inset ring-white/20
+      hover:bg-indigo-500 hover:shadow-[0_0_18px_rgba(99,102,241,0.4)]
+      active:bg-indigo-700;
+  }
+  .btn-danger {
+    @apply btn bg-rose-700 text-white ring-1 ring-inset ring-white/20
+      hover:bg-rose-600 hover:shadow-[0_0_18px_rgba(244,63,94,0.4)]
+      active:bg-rose-800;
+  }
+  .btn-success {
+    @apply btn bg-emerald-700 text-white ring-1 ring-inset ring-white/20
+      hover:bg-emerald-600 hover:shadow-[0_0_18px_rgba(16,185,129,0.35)]
+      active:bg-emerald-800;
+  }
+  .btn-warning {
+    @apply btn bg-amber-500 text-zinc-950 ring-1 ring-inset ring-white/20
+      hover:bg-amber-400 hover:shadow-[0_0_18px_rgba(245,158,11,0.35)]
+      active:bg-amber-600 font-bold;
+  }
+  .btn-purple {
+    @apply btn bg-violet-700 text-white ring-1 ring-inset ring-white/20
+      hover:bg-violet-600 hover:shadow-[0_0_18px_rgba(139,92,246,0.4)]
+      active:bg-violet-800;
+  }
+  .btn-gold {
+    @apply btn bg-amber-400 text-zinc-950 ring-1 ring-inset ring-white/20
+      hover:bg-amber-300 hover:shadow-[0_0_18px_rgba(245,158,11,0.4)]
+      font-bold;
+  }
+  .btn-sm {
+    @apply px-2.5 py-1 text-xs rounded-lg;
+  }
+
+  /* ── Form controls ───────────────────────────────────── */
+  .form-select {
+    @apply bg-zinc-800 text-slate-100 ring-1 ring-inset ring-white/[0.1] rounded-xl
+      px-3 py-2 text-sm
+      focus:outline-none focus:ring-indigo-500 focus:ring-2
+      hover:bg-zinc-700
+      cursor-pointer transition-colors duration-150;
+  }
+  .form-input {
+    @apply bg-zinc-800 text-slate-100 ring-1 ring-inset ring-white/[0.1] rounded-xl
+      px-3 py-2 text-sm placeholder:text-zinc-600
+      focus:outline-none focus:ring-2 focus:ring-indigo-500
+      hover:bg-zinc-700
+      transition-colors duration-150;
+  }
+  .form-input-sm {
+    @apply form-input text-xs px-2 py-1 rounded-lg;
+  }
+
+  /* ── Cards ────────────────────────────────────────────── */
+  .card {
+    @apply bg-zinc-900 ring-1 ring-inset ring-white/[0.08] rounded-2xl
+      shadow-[0_4px_24px_rgba(0,0,0,0.5)];
+  }
+
+  /* ── Panel variants ──────────────────────────────────── */
+  .panel-night {
+    @apply bg-violet-950/60 ring-1 ring-inset ring-violet-400/20 rounded-2xl
+      shadow-[0_0_24px_rgba(139,92,246,0.1)];
+  }
+  .panel-day {
+    @apply bg-amber-950/60 ring-1 ring-inset ring-amber-400/20 rounded-2xl
+      shadow-[0_0_24px_rgba(245,158,11,0.08)];
+  }
+  .panel-evil {
+    @apply bg-rose-950/60 ring-1 ring-inset ring-rose-400/20 rounded-2xl
+      shadow-[0_0_24px_rgba(244,63,94,0.1)];
+  }
+  .panel-good {
+    @apply bg-sky-950/60 ring-1 ring-inset ring-sky-400/20 rounded-2xl
+      shadow-[0_0_24px_rgba(56,189,248,0.1)];
+  }
+  .panel-warn {
+    @apply bg-amber-950/60 ring-1 ring-inset ring-amber-400/25 rounded-2xl;
+  }
+  .panel-purple {
+    @apply bg-violet-950/60 ring-1 ring-inset ring-violet-400/20 rounded-2xl
+      shadow-[0_0_24px_rgba(139,92,246,0.1)];
+  }
+
+  /* ── Badges (pill-style status indicators) ───────────── */
+  .badge-night {
+    @apply text-xs px-2.5 py-0.5 rounded-full font-semibold
+      bg-violet-500/15 text-violet-300 ring-1 ring-inset ring-violet-500/25;
+  }
+  .badge-day {
+    @apply text-xs px-2.5 py-0.5 rounded-full font-semibold
+      bg-amber-500/15 text-amber-300 ring-1 ring-inset ring-amber-500/25;
+  }
+  .badge-good {
+    @apply text-xs px-2.5 py-0.5 rounded-full font-semibold
+      bg-sky-500/15 text-sky-300 ring-1 ring-inset ring-sky-500/25;
+  }
+  .badge-evil {
+    @apply text-xs px-2.5 py-0.5 rounded-full font-semibold
+      bg-rose-500/15 text-rose-300 ring-1 ring-inset ring-rose-500/25;
+  }
+
+  /* ── Section heading ─────────────────────────────────── */
+  .section-label {
+    @apply text-xs font-bold text-zinc-500 uppercase tracking-[0.12em];
+  }
+}
