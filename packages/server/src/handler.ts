@@ -65,6 +65,23 @@ export function handleMessage(
         role: "storyteller" | "player";
         playerId?: string;
       };
+
+      // Validate the claimed playerId exists in the current game if the game
+      // has started (players list is non-empty).
+      if (
+        id.role === "player" &&
+        room.state.grimoire.players.length > 0 &&
+        !room.state.grimoire.players.some((p) => p.id === id.playerId)
+      ) {
+        client.send(
+          JSON.stringify({
+            type: "error",
+            payload: `Unknown playerId: ${id.playerId}`,
+          }),
+        );
+        return;
+      }
+
       client.identity = { role: id.role, playerId: id.playerId };
       sendSnapshot(client, room);
       return;

@@ -1025,10 +1025,10 @@ function MinionPromotionPrompt({
   state: GameState;
   dispatch: (a: Action) => void;
 }): React.ReactElement {
-  const aliveMinioons = state.grimoire.players.filter(
+  const aliveMinions = state.grimoire.players.filter(
     (p) => p.isAlive && p.alignment === "Minion",
   );
-  const [minionId, setMinionId] = useState(aliveMinioons[0]?.id ?? "");
+  const [minionId, setMinionId] = useState(aliveMinions[0]?.id ?? "");
 
   return (
     <div
@@ -1045,7 +1045,7 @@ function MinionPromotionPrompt({
         No Scarlet Woman was eligible. Choose a living Minion to become the new
         Demon. Show them the Imp token secretly.
       </p>
-      {aliveMinioons.length === 0 ? (
+      {aliveMinions.length === 0 ? (
         <p style={{ color: "crimson" }}>No living Minions — good wins!</p>
       ) : (
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -1053,7 +1053,7 @@ function MinionPromotionPrompt({
             value={minionId}
             onChange={(e) => setMinionId(e.target.value)}
           >
-            {aliveMinioons.map((p) => (
+            {aliveMinions.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name} ({p.trueCharacter})
               </option>

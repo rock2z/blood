@@ -57,8 +57,8 @@ export interface PlayerSnapshot {
   executionCandidateVotes: GameState["executionCandidateVotes"];
   nominatorsUsed: GameState["nominatorsUsed"];
   nominatedToday: GameState["nominatedToday"];
+  /** Only true for the Ravenkeeper player when they must submit their choice */
   pendingRavenkeeperChoice: boolean;
-  pendingMinionPromotion: boolean;
   grimoire: PlayerGrimoire;
 }
 
@@ -111,8 +111,10 @@ export function filterForPlayer(
     executionCandidateVotes: state.executionCandidateVotes,
     nominatorsUsed: state.nominatorsUsed,
     nominatedToday: state.nominatedToday,
-    pendingRavenkeeperChoice: state.pendingRavenkeeperChoice,
-    pendingMinionPromotion: state.pendingMinionPromotion,
+    // Only expose to the Ravenkeeper themselves — other players must not know
+    // whether the Ravenkeeper was killed this night before it is announced.
+    pendingRavenkeeperChoice:
+      state.pendingRavenkeeperChoice && me?.trueCharacter === "ravenkeeper",
     grimoire: {
       players: publicPlayers,
       myCharacter,

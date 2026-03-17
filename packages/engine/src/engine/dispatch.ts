@@ -824,6 +824,9 @@ function handleSlayerShoot(
   if (state.grimoire.slayerUsed) {
     throw new Error("Slayer ability has already been used");
   }
+  if (action.targetId === action.slayerId) {
+    throw new Error("Slayer cannot target themselves");
+  }
   if (slayer.isPoisoned || slayer.isDrunk) {
     // Ability is used up but has no effect when poisoned/drunk
     return {
