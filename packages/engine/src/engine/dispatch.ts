@@ -93,7 +93,7 @@ function handleAdvanceToNight(state: GameState): GameState {
 
   return {
     ...state,
-    grimoire: { ...state.grimoire, players },
+    grimoire: { ...state.grimoire, players, butlerMaster: null },
     phase: "night",
     voting: null,
     executionCandidateId: null,
@@ -153,14 +153,24 @@ function handleResolveNight(state: GameState): GameState {
 
     if (isSelfKill) {
       // Imp self-kill: try Scarlet Woman first
-      const { grimoire: swGrimoire, activated } =
-        tryActivateScarletWoman(grimoire);
+      const {
+        grimoire: swGrimoire,
+        activated,
+        activatedPlayerId,
+      } = tryActivateScarletWoman(grimoire);
       if (activated) {
+        // Log Scarlet Woman activation before the Imp's death
+        const swEvent = {
+          type: "scarlet-woman-activated" as const,
+          night: currentState.day,
+          phase: currentState.phase,
+          payload: { activatedPlayerId },
+        };
         // Imp dies, Scarlet Woman becomes new Imp
         const { grimoire: deadGrimoire, log } = killPlayer(
           swGrimoire,
           impTargetId,
-          currentState.log,
+          [...currentState.log, swEvent],
           currentState.phase,
           currentState.day,
           "imp-self-killed",
@@ -460,13 +470,19 @@ function handleNominate(state: GameState, action: NominateAction): GameState {
   }
 
   // --- Virgin ability check ---
-  // Fires if: target is Virgin, Virgin is healthy, ability hasn't fired,
+  // Per the rules, the Virgin loses their ability on the FIRST nomination,
+  // regardless of whether the ability fires (even if Virgin is poisoned/drunk
+  // or the nominator is not Townsfolk). virginAbilityFired is set on any first
+  // nomination to prevent the ability from being re-triggered later.
+  const isFirstVirginNomination =
+    target.trueCharacter === "virgin" && !state.grimoire.virginAbilityFired;
+
+  // The ability fires only if: first nomination, Virgin is healthy,
   // AND nominator is a true Townsfolk (not Spy/Recluse registering as good).
   const virginAbilityApplies =
-    target.trueCharacter === "virgin" &&
+    isFirstVirginNomination &&
     !target.isPoisoned &&
     !target.isDrunk &&
-    !state.grimoire.virginAbilityFired &&
     nominator.alignment === "Townsfolk";
 
   if (virginAbilityApplies) {
@@ -526,8 +542,16 @@ function handleNominate(state: GameState, action: NominateAction): GameState {
     votes: {},
   };
 
+  // If this is the first nomination of the Virgin (but ability didn't fire because
+  // Virgin is poisoned/drunk or nominator wasn't Townsfolk), still mark the ability
+  // as spent. The Virgin loses their ability after their first nomination.
+  const grimoireAfterVirgin = isFirstVirginNomination
+    ? { ...state.grimoire, virginAbilityFired: true }
+    : state.grimoire;
+
   return {
     ...state,
+    grimoire: grimoireAfterVirgin,
     voting,
     nominatorsUsed: [...state.nominatorsUsed, nominatorId],
     nominatedToday: [...state.nominatedToday, targetId],
@@ -697,13 +721,23 @@ function handleExecute(state: GameState, action: ExecuteAction): GameState {
   if (target.alignment === "Demon") {
     // Demon executed: check Scarlet Woman BEFORE finalising the win.
     // If SW activates, the game continues (SW becomes new Demon, good hasn't won).
-    const { grimoire: swGrimoire, activated } =
-      tryActivateScarletWoman(updatedGrimoire);
+    const {
+      grimoire: swGrimoire,
+      activated,
+      activatedPlayerId,
+    } = tryActivateScarletWoman(updatedGrimoire);
     if (activated) {
+      const swEvent = {
+        type: "scarlet-woman-activated" as const,
+        night: updatedState.day,
+        phase: updatedState.phase,
+        payload: { activatedPlayerId },
+      };
       const newWinner = checkWinCondition(swGrimoire);
       return {
         ...updatedState,
         grimoire: swGrimoire,
+        log: [...updatedState.log, swEvent],
         winner: newWinner ?? null,
         phase: newWinner ? "game-over" : updatedState.phase,
       };
