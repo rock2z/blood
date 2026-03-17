@@ -4,9 +4,9 @@
   "description": "Blood on the Clocktower — game server (Fastify + WebSocket)",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc -b",
-    "dev": "ts-node src/index.ts",
-    "pretest": "tsc -b ../engine",
+    "build": "npx tsc -b",
+    "dev": "npx ts-node src/index.ts",
+    "pretest": "npx tsc -b ../engine",
     "test": "jest --coverage --passWithNoTests",
     "typecheck": "tsc --noEmit"
   },
