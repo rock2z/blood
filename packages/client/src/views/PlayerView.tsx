@@ -41,18 +41,27 @@ export function PlayerView({
     send({ type: "action", payload: action });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen text-slate-100">
       <div className="max-w-md mx-auto px-4 py-6 pb-20">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 pr-16">
-          <h1 className="text-xl font-bold text-slate-100">
-            {t("player.title")}
+          <h1 className="text-xl font-bold">
+            <span className="bg-gradient-to-r from-rose-300 via-amber-200 to-orange-300 bg-clip-text text-transparent">
+              {t("player.title")}
+            </span>
           </h1>
           <div className="flex items-center gap-2">
-            <span className="text-xs px-2 py-1 bg-slate-800 text-slate-400 rounded-md capitalize">
+            <span
+              className={cx(
+                "text-xs px-2.5 py-1 rounded-lg capitalize font-medium border",
+                phase === "first-night" || phase === "night"
+                  ? "bg-indigo-500/15 text-indigo-300 border-indigo-400/25"
+                  : "bg-amber-500/15 text-amber-300 border-amber-400/25",
+              )}
+            >
               {phase}
             </span>
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-slate-600">
               {t("player.day")} {day}
             </span>
           </div>
@@ -62,10 +71,10 @@ export function PlayerView({
         {winner && (
           <div
             className={cx(
-              "mb-6 p-4 rounded-xl text-center text-lg font-bold",
+              "mb-6 p-4 rounded-2xl text-center text-lg font-bold border-2 backdrop-blur-sm",
               winner === "good"
-                ? "bg-blue-900/50 border-2 border-blue-500 text-blue-300"
-                : "bg-red-900/50 border-2 border-red-500 text-red-300",
+                ? "bg-sky-900/40 border-sky-400/50 text-sky-300 shadow-[0_0_24px_rgba(56,189,248,0.2)]"
+                : "bg-rose-900/40 border-rose-400/50 text-rose-300 shadow-[0_0_24px_rgba(251,113,133,0.2)]",
             )}
           >
             🏆 {t("player.wins", { winner: winner.toUpperCase() })}
@@ -116,20 +125,20 @@ function MyCharacterCard({
   return (
     <div
       className={cx(
-        "border-2 rounded-2xl p-5 mb-5",
+        "rounded-2xl p-6 mb-5 border backdrop-blur-sm",
         isEvil
-          ? "border-red-500 bg-gradient-to-br from-red-950/50 to-slate-900"
-          : "border-blue-500 bg-gradient-to-br from-blue-950/50 to-slate-900",
+          ? "border-rose-400/40 bg-gradient-to-br from-rose-950/60 via-black/40 to-black/60 shadow-[0_0_36px_rgba(251,113,133,0.15),inset_0_1px_0_rgba(251,113,133,0.1)]"
+          : "border-sky-400/40 bg-gradient-to-br from-sky-950/60 via-black/40 to-black/60 shadow-[0_0_36px_rgba(56,189,248,0.15),inset_0_1px_0_rgba(56,189,248,0.1)]",
       )}
     >
-      <div className="section-label mb-1">{t("player.your_character")}</div>
-      <div className="text-3xl font-bold text-slate-100 capitalize mt-1 mb-1">
+      <div className="section-label mb-2">{t("player.your_character")}</div>
+      <div className="text-4xl font-bold text-white capitalize mt-1 mb-1 tracking-tight">
         {t(`characters.${myCharacter}`, { defaultValue: myCharacter })}
       </div>
       <div
         className={cx(
-          "text-sm font-semibold",
-          isEvil ? "text-red-400" : "text-blue-400",
+          "text-sm font-semibold tracking-wide",
+          isEvil ? "text-rose-400" : "text-sky-400",
         )}
       >
         {isEvil ? t("player.evil") : t("player.good")}
@@ -174,12 +183,12 @@ function PlayerList({
             <div
               key={p.id}
               className={cx(
-                "flex items-center gap-3 px-4 py-3 border-b border-slate-800 last:border-0 transition-colors",
-                !p.isAlive && "opacity-40",
-                isCandidate && "bg-red-950/30",
+                "flex items-center gap-3 px-4 py-3 border-b border-white/[0.05] last:border-0 transition-colors hover:bg-white/[0.03]",
+                !p.isAlive && "opacity-35",
+                isCandidate && "bg-rose-950/40",
               )}
             >
-              <span className="text-slate-600 text-xs w-5 text-right shrink-0">
+              <span className="text-slate-700 text-xs w-5 text-right shrink-0 font-mono">
                 {p.seatIndex + 1}
               </span>
               <span
@@ -191,7 +200,7 @@ function PlayerList({
                 {p.name}
               </span>
               {!p.isAlive && (
-                <span className="text-xs text-slate-600 bg-slate-800 px-2 py-0.5 rounded-md">
+                <span className="text-xs text-slate-600 bg-white/[0.04] border border-white/[0.07] px-2 py-0.5 rounded-md">
                   {p.ghostVoteUsed
                     ? t("player.dead_vote_used")
                     : t("player.dead")}
@@ -313,7 +322,7 @@ function VoteButtons({
     voting.targetId;
 
   return (
-    <div className="p-4 bg-amber-950/30 border-2 border-amber-600/70 rounded-xl">
+    <div className="p-4 panel-day border-2">
       <div className="font-semibold text-slate-100 mb-3 text-sm">
         {t("player.your_vote_execute", { name: targetName })}
       </div>

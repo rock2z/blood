@@ -39,7 +39,7 @@ function LanguageSwitcher(): React.ReactElement {
   return (
     <button
       onClick={toggle}
-      className="fixed top-3 right-3 px-3 py-1.5 text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700 rounded-lg hover:bg-slate-700 transition-colors z-50 cursor-pointer"
+      className="fixed top-4 right-4 px-3 py-1.5 text-xs font-semibold bg-white/[0.06] backdrop-blur-md text-slate-300 border border-white/[0.1] rounded-xl hover:bg-white/[0.12] hover:border-white/[0.22] hover:text-white transition-all duration-200 z-50 cursor-pointer"
     >
       {current === "en" ? t("lang.zh") : t("lang.en")}
     </button>
@@ -55,11 +55,12 @@ export function App(): React.ReactElement {
 
   if (!state) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <LanguageSwitcher />
-        <div className="text-center">
-          <div className="text-5xl mb-5">🕰️</div>
-          <p className="text-slate-400 text-base">
+        <div className="text-center space-y-5 animate-glow-in">
+          <div className="text-6xl animate-pulse-slow">🕰️</div>
+          <div className="h-px w-28 mx-auto bg-gradient-to-r from-transparent via-indigo-500/70 to-transparent" />
+          <p className="text-slate-500 text-xs tracking-widest uppercase">
             {t("app.connecting", { room: roomId })}
           </p>
         </div>

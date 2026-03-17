@@ -4,10 +4,17 @@
 
 @layer base {
   html {
-    @apply bg-slate-950;
+    background: #07050d;
   }
   body {
-    @apply bg-slate-950 text-slate-100 antialiased;
+    background: radial-gradient(
+      ellipse at 50% -10%,
+      #2d1a5e 0%,
+      #0d0821 40%,
+      #07050d 70%
+    );
+    background-attachment: fixed;
+    @apply min-h-screen text-slate-100 antialiased;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
       "Helvetica Neue", Arial, sans-serif;
   }
@@ -16,85 +23,108 @@
 @layer components {
   /* ── Buttons ─────────────────────────────────────────── */
   .btn {
-    @apply inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium
-      rounded-lg transition-colors duration-150 cursor-pointer
-      disabled:opacity-40 disabled:cursor-not-allowed select-none;
+    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-semibold
+      rounded-xl transition-all duration-200 cursor-pointer gap-1.5
+      disabled:opacity-30 disabled:cursor-not-allowed select-none border;
   }
   .btn-default {
-    @apply btn bg-slate-700 text-slate-200 border border-slate-600
-      hover:bg-slate-600 active:bg-slate-700;
+    @apply btn bg-white/[0.06] text-slate-200 border-white/[0.1]
+      hover:bg-white/[0.12] hover:border-white/[0.22] hover:text-white
+      active:bg-white/[0.05] backdrop-blur-sm;
   }
   .btn-primary {
-    @apply btn bg-blue-600 text-white border border-blue-600
-      hover:bg-blue-500 active:bg-blue-700;
+    @apply btn bg-gradient-to-br from-indigo-500 to-violet-600 text-white border-indigo-400/40
+      hover:from-indigo-400 hover:to-violet-500
+      hover:shadow-[0_0_18px_rgba(129,140,248,0.45)]
+      active:from-indigo-600 active:to-violet-700;
   }
   .btn-danger {
-    @apply btn bg-red-600 text-white border border-red-600
-      hover:bg-red-500 active:bg-red-700;
+    @apply btn bg-gradient-to-br from-rose-500 to-red-700 text-white border-rose-400/40
+      hover:from-rose-400 hover:to-red-600
+      hover:shadow-[0_0_18px_rgba(251,113,133,0.45)]
+      active:from-rose-600 active:to-red-800;
   }
   .btn-success {
-    @apply btn bg-emerald-600 text-white border border-emerald-600
-      hover:bg-emerald-500 active:bg-emerald-700;
+    @apply btn bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-emerald-400/40
+      hover:from-emerald-400 hover:to-teal-500
+      hover:shadow-[0_0_18px_rgba(52,211,153,0.4)]
+      active:from-emerald-600 active:to-teal-700;
   }
   .btn-warning {
-    @apply btn bg-amber-500 text-slate-950 border border-amber-500
-      hover:bg-amber-400 active:bg-amber-600 font-semibold;
+    @apply btn bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 border-amber-300/40
+      hover:from-amber-300 hover:to-orange-400
+      hover:shadow-[0_0_18px_rgba(251,191,36,0.4)]
+      active:from-amber-500 active:to-orange-600 font-bold;
   }
   .btn-purple {
-    @apply btn bg-purple-600 text-white border border-purple-600
-      hover:bg-purple-500 active:bg-purple-700;
+    @apply btn bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white border-purple-400/40
+      hover:from-purple-400 hover:to-fuchsia-500
+      hover:shadow-[0_0_18px_rgba(192,132,252,0.45)]
+      active:from-purple-600 active:to-fuchsia-700;
   }
   .btn-gold {
-    @apply btn bg-yellow-500 text-slate-950 border border-yellow-500
-      hover:bg-yellow-400 font-semibold;
+    @apply btn bg-gradient-to-br from-yellow-400 to-amber-500 text-slate-950 border-yellow-300/40
+      hover:from-yellow-300 hover:to-amber-400
+      hover:shadow-[0_0_18px_rgba(250,204,21,0.5)]
+      font-bold;
   }
   .btn-sm {
-    @apply px-2.5 py-1 text-xs;
+    @apply px-2.5 py-1 text-xs rounded-lg;
   }
 
   /* ── Form controls ───────────────────────────────────── */
   .form-select {
-    @apply bg-slate-800 text-slate-100 border border-slate-600 rounded-lg
-      px-3 py-1.5 text-sm
-      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-      cursor-pointer;
+    @apply bg-white/[0.06] backdrop-blur-sm text-slate-100 border border-white/[0.12] rounded-xl
+      px-3 py-2 text-sm
+      focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-400/50
+      hover:border-white/[0.22] hover:bg-white/[0.09]
+      cursor-pointer transition-all duration-150;
   }
   .form-input {
-    @apply bg-slate-800 text-slate-100 border border-slate-600 rounded-lg
-      px-3 py-1.5 text-sm placeholder:text-slate-500
-      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+    @apply bg-white/[0.06] backdrop-blur-sm text-slate-100 border border-white/[0.12] rounded-xl
+      px-3 py-2 text-sm placeholder:text-slate-600
+      focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-400/50
+      hover:border-white/[0.22] hover:bg-white/[0.09]
+      transition-all duration-150;
   }
   .form-input-sm {
-    @apply form-input text-xs px-2 py-1;
+    @apply form-input text-xs px-2 py-1 rounded-lg;
   }
 
-  /* ── Card ────────────────────────────────────────────── */
+  /* ── Cards ────────────────────────────────────────────── */
   .card {
-    @apply bg-slate-900 border border-slate-700/60 rounded-xl;
+    @apply bg-white/[0.04] backdrop-blur-sm border border-white/[0.08] rounded-2xl
+      shadow-[0_8px_32px_rgba(0,0,0,0.5)];
   }
 
   /* ── Panel variants ──────────────────────────────────── */
   .panel-night {
-    @apply bg-indigo-950/40 border border-indigo-700/60 rounded-xl;
+    @apply bg-indigo-950/50 backdrop-blur-sm border border-indigo-400/25 rounded-2xl
+      shadow-[0_0_28px_rgba(99,102,241,0.12),inset_0_1px_0_rgba(165,180,252,0.08)];
   }
   .panel-day {
-    @apply bg-amber-950/30 border border-amber-700/60 rounded-xl;
+    @apply bg-amber-950/50 backdrop-blur-sm border border-amber-400/25 rounded-2xl
+      shadow-[0_0_28px_rgba(251,191,36,0.1),inset_0_1px_0_rgba(251,191,36,0.07)];
   }
   .panel-evil {
-    @apply bg-red-950/30 border border-red-700/60 rounded-xl;
+    @apply bg-rose-950/50 backdrop-blur-sm border border-rose-400/25 rounded-2xl
+      shadow-[0_0_28px_rgba(251,113,133,0.12),inset_0_1px_0_rgba(251,113,133,0.07)];
   }
   .panel-good {
-    @apply bg-blue-950/30 border border-blue-700/60 rounded-xl;
+    @apply bg-sky-950/50 backdrop-blur-sm border border-sky-400/25 rounded-2xl
+      shadow-[0_0_28px_rgba(56,189,248,0.12),inset_0_1px_0_rgba(56,189,248,0.07)];
   }
   .panel-warn {
-    @apply bg-yellow-950/40 border border-yellow-600/60 rounded-xl;
+    @apply bg-amber-950/50 backdrop-blur-sm border border-amber-400/30 rounded-2xl
+      shadow-[0_0_28px_rgba(251,191,36,0.1)];
   }
   .panel-purple {
-    @apply bg-purple-950/30 border border-purple-700/60 rounded-xl;
+    @apply bg-purple-950/50 backdrop-blur-sm border border-purple-400/25 rounded-2xl
+      shadow-[0_0_28px_rgba(192,132,252,0.12),inset_0_1px_0_rgba(192,132,252,0.07)];
   }
 
   /* ── Section heading ─────────────────────────────────── */
   .section-label {
-    @apply text-xs font-semibold text-slate-500 uppercase tracking-wider;
+    @apply text-xs font-bold text-slate-500 uppercase tracking-[0.15em];
   }
 }

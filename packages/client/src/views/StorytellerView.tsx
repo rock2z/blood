@@ -40,10 +40,14 @@ export function StorytellerView({ state, send }: Props): React.ReactElement {
   const hasPlayers = state.grimoire.players.length > 0;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 px-4 py-6 font-sans">
+    <div className="min-h-screen text-slate-100 px-4 py-6 font-sans">
       <h1 className="text-2xl font-bold mb-6 pr-16">
-        {t("app.title")}{" "}
-        <span className="text-amber-400 font-normal">— Storyteller</span>
+        <span className="bg-gradient-to-r from-rose-300 via-amber-200 to-orange-300 bg-clip-text text-transparent">
+          {t("app.title")}
+        </span>{" "}
+        <span className="text-slate-600 font-normal text-lg">
+          — Storyteller
+        </span>
       </h1>
 
       {!hasPlayers ? (
@@ -51,9 +55,9 @@ export function StorytellerView({ state, send }: Props): React.ReactElement {
       ) : (
         <>
           <PhaseBar state={state} dispatch={dispatch} />
-          <div className="my-6 border-t border-slate-800" />
+          <div className="my-6 border-t border-white/[0.06]" />
           <GrimoireTable state={state} dispatch={dispatch} />
-          <div className="my-6 border-t border-slate-800" />
+          <div className="my-6 border-t border-white/[0.06]" />
           {(state.phase === "first-night" || state.phase === "night") && (
             <NightPanel state={state} dispatch={dispatch} />
           )}
@@ -174,7 +178,7 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
       <div className="card overflow-hidden mb-4">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-700">
+            <tr className="border-b border-white/[0.08]">
               {[
                 t("setup.seat"),
                 t("setup.name"),
@@ -184,7 +188,7 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
               ].map((h) => (
                 <th
                   key={h}
-                  className="px-3 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-900"
+                  className="px-3 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider bg-black/20"
                 >
                   {h}
                 </th>
@@ -203,7 +207,7 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
               return (
                 <tr
                   key={i}
-                  className="border-b border-slate-800 last:border-0 hover:bg-slate-800/30 transition-colors"
+                  className="border-b border-white/[0.05] last:border-0 hover:bg-white/[0.03] transition-colors"
                 >
                   <td className="px-3 py-2 text-center text-slate-500 w-10">
                     {i + 1}
@@ -302,11 +306,14 @@ function PhaseBar({
   const { phase, day, winner } = state;
 
   const phaseColors: Record<string, string> = {
-    "first-night": "bg-indigo-800 text-indigo-200",
-    night: "bg-indigo-800 text-indigo-200",
-    day: "bg-amber-700 text-amber-100",
+    "first-night":
+      "bg-indigo-500/15 text-indigo-300 border border-indigo-400/30 shadow-[0_0_12px_rgba(99,102,241,0.2)]",
+    night:
+      "bg-indigo-500/15 text-indigo-300 border border-indigo-400/30 shadow-[0_0_12px_rgba(99,102,241,0.2)]",
+    day: "bg-amber-500/15 text-amber-300 border border-amber-400/30 shadow-[0_0_12px_rgba(251,191,36,0.15)]",
   };
-  const phaseClass = phaseColors[phase] ?? "bg-slate-700 text-slate-200";
+  const phaseClass =
+    phaseColors[phase] ?? "bg-white/10 text-slate-300 border border-white/20";
 
   return (
     <div className="flex items-center gap-4 flex-wrap">
@@ -329,8 +336,8 @@ function PhaseBar({
           className={cx(
             "px-4 py-1.5 rounded-lg font-bold text-sm",
             winner === "good"
-              ? "bg-blue-700 text-white"
-              : "bg-red-700 text-white",
+              ? "bg-sky-500/15 text-sky-300 border border-sky-400/35 shadow-[0_0_14px_rgba(56,189,248,0.2)]"
+              : "bg-rose-500/15 text-rose-300 border border-rose-400/35 shadow-[0_0_14px_rgba(251,113,133,0.2)]",
           )}
         >
           🏆 {t("phase_bar.wins", { winner: winner.toUpperCase() })}
@@ -399,17 +406,15 @@ function GrimoireTable({
 
   return (
     <div>
-      <h2 className="text-base font-semibold text-slate-200 mb-3">
-        {t("grimoire.title")}
-      </h2>
+      <h2 className="section-label mb-3">{t("grimoire.title")}</h2>
       <div className="card overflow-x-auto mb-3">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-700">
+            <tr className="border-b border-white/[0.08]">
               {columns.map((h) => (
                 <th
                   key={h}
-                  className="px-3 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap"
+                  className="px-3 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap bg-black/20"
                 >
                   {h}
                 </th>
@@ -500,7 +505,7 @@ function PlayerRow({
   const isEvil = alignment === "Demon" || alignment === "Minion";
 
   const rowClass = cx(
-    "border-b border-slate-800 last:border-0 transition-colors",
+    "border-b border-white/[0.05] last:border-0 transition-colors hover:bg-white/[0.02]",
     !isAlive && "opacity-40",
     isPoisoned && "bg-red-950/20",
     isDrunk && !isPoisoned && "bg-yellow-950/20",
@@ -709,8 +714,8 @@ function NightOrderPanel({
                 className={cx(
                   "mb-2 p-3 rounded-xl border transition-all",
                   done
-                    ? "bg-emerald-950/20 border-emerald-800/40 opacity-60"
-                    : "bg-slate-800/50 border-slate-700",
+                    ? "bg-emerald-950/20 border-emerald-500/20 opacity-50"
+                    : "bg-white/[0.04] border-white/[0.08]",
                 )}
               >
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -829,8 +834,8 @@ function NightStepCard({
       className={cx(
         "p-3 rounded-xl border transition-all",
         done
-          ? "bg-emerald-950/20 border-emerald-800/40 opacity-60"
-          : "bg-slate-800/50 border-slate-700",
+          ? "bg-emerald-950/20 border-emerald-500/20 opacity-50"
+          : "bg-white/[0.04] border-white/[0.08]",
       )}
     >
       <div className="flex items-center gap-2 mb-1">
@@ -1395,7 +1400,7 @@ function VoteTally({
   const { t } = useTranslation();
 
   return (
-    <div className="mt-3 border-t border-slate-700 pt-3">
+    <div className="mt-3 border-t border-white/[0.08] pt-3">
       {voting.eligibleVoterIds.map((id) => {
         const name = grimoire.players.find((p) => p.id === id)?.name ?? id;
         const vote = voting.votes[id];
