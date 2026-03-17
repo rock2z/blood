@@ -24,6 +24,9 @@ import {
 } from "@botc/engine";
 import { SendFn } from "../useGame";
 
+const cx = (...classes: (string | false | undefined | null)[]) =>
+  classes.filter(Boolean).join(" ");
+
 interface Props {
   state: GameState;
   send: SendFn;
@@ -37,17 +40,20 @@ export function StorytellerView({ state, send }: Props): React.ReactElement {
   const hasPlayers = state.grimoire.players.length > 0;
 
   return (
-    <div style={{ fontFamily: "monospace", padding: 16 }}>
-      <h1>{t("app.title")} — Storyteller</h1>
+    <div className="min-h-screen bg-slate-950 text-slate-100 px-4 py-6 font-sans">
+      <h1 className="text-2xl font-bold mb-6 pr-16">
+        {t("app.title")}{" "}
+        <span className="text-amber-400 font-normal">— Storyteller</span>
+      </h1>
 
       {!hasPlayers ? (
         <SetupPlayers send={send} />
       ) : (
         <>
           <PhaseBar state={state} dispatch={dispatch} />
-          <hr />
+          <div className="my-6 border-t border-slate-800" />
           <GrimoireTable state={state} dispatch={dispatch} />
-          <hr />
+          <div className="my-6 border-t border-slate-800" />
           {(state.phase === "first-night" || state.phase === "night") && (
             <NightPanel state={state} dispatch={dispatch} />
           )}
@@ -149,132 +155,131 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
     valid && bag.length === names.length ? buildPlayers(names, bag) : [];
 
   return (
-    <div>
-      <h2>{t("setup.title", { count: names.length })}</h2>
-      <p style={{ fontSize: 13, color: "#555" }}>
+    <div className="max-w-2xl">
+      <h2 className="text-lg font-semibold text-slate-100 mb-2">
+        {t("setup.title", { count: names.length })}
+      </h2>
+      <p className="text-sm text-slate-400 mb-5">
         {t("setup.instructions_1")}{" "}
-        <strong>{t("setup.instructions_roll")}</strong>{" "}
+        <strong className="text-slate-300">
+          {t("setup.instructions_roll")}
+        </strong>{" "}
         {t("setup.instructions_2")}{" "}
-        <strong>{t("setup.instructions_start")}</strong>{" "}
+        <strong className="text-slate-300">
+          {t("setup.instructions_start")}
+        </strong>{" "}
         {t("setup.instructions_3")}
       </p>
 
-      <table style={{ borderCollapse: "collapse", marginBottom: 12 }}>
-        <thead>
-          <tr>
-            {[
-              t("setup.seat"),
-              t("setup.name"),
-              t("setup.character"),
-              t("setup.align"),
-              "",
-            ].map((h) => (
-              <th
-                key={h}
-                style={{
-                  border: "1px solid #ccc",
-                  padding: "4px 8px",
-                  background: "#f5f5f5",
-                  textAlign: "left",
-                }}
-              >
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {names.map((name, i) => {
-            const p = players[i];
-            const charId = p?.trueCharacter;
-            const charName = charId
-              ? t(`characters.${charId}`, { defaultValue: charId })
-              : "—";
-            const isEvil =
-              p?.alignment === "Minion" || p?.alignment === "Demon";
-            return (
-              <tr key={i}>
-                <td
-                  style={{
-                    border: "1px solid #ccc",
-                    padding: "4px 8px",
-                    textAlign: "center",
-                  }}
+      <div className="card overflow-hidden mb-4">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-700">
+              {[
+                t("setup.seat"),
+                t("setup.name"),
+                t("setup.character"),
+                t("setup.align"),
+                "",
+              ].map((h) => (
+                <th
+                  key={h}
+                  className="px-3 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-900"
                 >
-                  {i + 1}
-                </td>
-                <td style={{ border: "1px solid #ccc", padding: "4px 8px" }}>
-                  <input
-                    value={name}
-                    onChange={(e) => updateName(i, e.target.value)}
-                    style={{ width: 120 }}
-                  />
-                </td>
-                <td
-                  style={{
-                    border: "1px solid #ccc",
-                    padding: "4px 8px",
-                    color: isEvil ? "crimson" : "navy",
-                  }}
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {names.map((name, i) => {
+              const p = players[i];
+              const charId = p?.trueCharacter;
+              const charName = charId
+                ? t(`characters.${charId}`, { defaultValue: charId })
+                : "—";
+              const isEvil =
+                p?.alignment === "Minion" || p?.alignment === "Demon";
+              return (
+                <tr
+                  key={i}
+                  className="border-b border-slate-800 last:border-0 hover:bg-slate-800/30 transition-colors"
                 >
-                  {charName}
-                  {p?.isDrunk && (
-                    <span style={{ color: "#a05000", marginLeft: 6 }}>
-                      (
-                      {t("setup.believes", {
-                        character: t(`characters.${p.perceivedCharacter}`, {
-                          defaultValue: p.perceivedCharacter,
-                        }),
-                      })}
-                      )
-                    </span>
-                  )}
-                </td>
-                <td
-                  style={{
-                    border: "1px solid #ccc",
-                    padding: "4px 8px",
-                    color: isEvil ? "crimson" : "royalblue",
-                  }}
-                >
-                  {p?.alignment ?? "—"}
-                </td>
-                <td style={{ border: "1px solid #ccc", padding: "4px 8px" }}>
-                  <button
-                    onClick={() => removePlayer(i)}
-                    disabled={names.length <= 5}
-                    style={{ fontSize: 11 }}
+                  <td className="px-3 py-2 text-center text-slate-500 w-10">
+                    {i + 1}
+                  </td>
+                  <td className="px-3 py-2">
+                    <input
+                      value={name}
+                      onChange={(e) => updateName(i, e.target.value)}
+                      className="form-input w-32"
+                    />
+                  </td>
+                  <td
+                    className={cx(
+                      "px-3 py-2 font-medium",
+                      isEvil ? "text-red-400" : "text-blue-400",
+                    )}
                   >
-                    ✕
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                    {charName}
+                    {p?.isDrunk && (
+                      <span className="text-amber-500 ml-2 text-xs">
+                        (
+                        {t("setup.believes", {
+                          character: t(`characters.${p.perceivedCharacter}`, {
+                            defaultValue: p.perceivedCharacter,
+                          }),
+                        })}
+                        )
+                      </span>
+                    )}
+                  </td>
+                  <td
+                    className={cx(
+                      "px-3 py-2 text-sm font-medium",
+                      isEvil ? "text-red-400" : "text-blue-400",
+                    )}
+                  >
+                    {p?.alignment ?? "—"}
+                  </td>
+                  <td className="px-3 py-2 w-10">
+                    <button
+                      onClick={() => removePlayer(i)}
+                      disabled={names.length <= 5}
+                      className="btn-default btn-sm text-slate-400 hover:text-red-400"
+                    >
+                      ✕
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <button onClick={addPlayer} disabled={names.length >= 15}>
+      <div className="flex gap-2 flex-wrap items-center">
+        <button
+          onClick={addPlayer}
+          disabled={names.length >= 15}
+          className="btn-default"
+        >
           {t("setup.add_player")}
         </button>
-        <button onClick={reroll}>{t("setup.reroll")}</button>
+        <button onClick={reroll} className="btn-default">
+          {t("setup.reroll")}
+        </button>
         <button
           onClick={handleStart}
           disabled={!valid}
-          style={{
-            background: valid ? "#2a6" : "#ccc",
-            color: valid ? "white" : "#666",
-            fontWeight: "bold",
-            padding: "4px 16px",
-          }}
+          className="btn-success px-5"
         >
           {t("setup.start_game")}
         </button>
       </div>
 
       {!valid && (
-        <p style={{ color: "crimson", fontSize: 13 }}>
+        <p className="text-red-400 text-sm mt-3">
           {t("setup.player_count_error")}
         </p>
       )}
@@ -296,42 +301,65 @@ function PhaseBar({
   const { t } = useTranslation();
   const { phase, day, winner } = state;
 
+  const phaseColors: Record<string, string> = {
+    "first-night": "bg-indigo-800 text-indigo-200",
+    night: "bg-indigo-800 text-indigo-200",
+    day: "bg-amber-700 text-amber-100",
+  };
+  const phaseClass = phaseColors[phase] ?? "bg-slate-700 text-slate-200";
+
   return (
-    <div>
-      <strong>{t("phase_bar.phase")}</strong> {phase} &nbsp;
-      <strong>{t("phase_bar.day")}</strong> {day}
+    <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex items-center gap-2">
+        <span
+          className={cx(
+            "px-3 py-1 rounded-lg text-sm font-semibold capitalize",
+            phaseClass,
+          )}
+        >
+          {phase}
+        </span>
+        <span className="text-slate-400 text-sm">
+          {t("phase_bar.day")} {day}
+        </span>
+      </div>
+
       {winner && (
         <span
-          style={{
-            display: "inline-block",
-            marginLeft: 12,
-            padding: "2px 12px",
-            background: winner === "good" ? "#1890ff" : "#cf1322",
-            color: "white",
-            fontWeight: "bold",
-            borderRadius: 4,
-          }}
+          className={cx(
+            "px-4 py-1.5 rounded-lg font-bold text-sm",
+            winner === "good"
+              ? "bg-blue-700 text-white"
+              : "bg-red-700 text-white",
+          )}
         >
           🏆 {t("phase_bar.wins", { winner: winner.toUpperCase() })}
         </span>
       )}
+
       {!winner && (
-        <div style={{ marginTop: 8 }}>
+        <div className="flex gap-2 flex-wrap">
           {(phase === "first-night" || phase === "night") &&
             !state.pendingRavenkeeperChoice &&
             !state.pendingMinionPromotion && (
-              <button onClick={() => dispatch({ type: "resolve-night" })}>
+              <button
+                onClick={() => dispatch({ type: "resolve-night" })}
+                className="btn-primary"
+              >
                 {t("phase_bar.resolve_night", { day: day + 1 })}
               </button>
             )}
           {phase === "day" && (
             <>
-              <button onClick={() => dispatch({ type: "skip-execution" })}>
+              <button
+                onClick={() => dispatch({ type: "skip-execution" })}
+                className="btn-default"
+              >
                 {t("phase_bar.end_day")}
               </button>
               <button
-                style={{ marginLeft: 8 }}
                 onClick={() => dispatch({ type: "advance-to-night" })}
+                className="btn-default"
               >
                 {t("phase_bar.advance_to_night")}
               </button>
@@ -371,50 +399,74 @@ function GrimoireTable({
 
   return (
     <div>
-      <h2>{t("grimoire.title")}</h2>
-      <table style={{ borderCollapse: "collapse", width: "100%" }}>
-        <thead>
-          <tr>
-            {columns.map((h) => (
-              <th
-                key={h}
-                style={{
-                  border: "1px solid #ccc",
-                  padding: "4px 8px",
-                  background: "#f5f5f5",
-                }}
-              >
-                {h}
-              </th>
+      <h2 className="text-base font-semibold text-slate-200 mb-3">
+        {t("grimoire.title")}
+      </h2>
+      <div className="card overflow-x-auto mb-3">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-700">
+              {columns.map((h) => (
+                <th
+                  key={h}
+                  className="px-3 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap"
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {grimoire.players.map((p) => (
+              <PlayerRow
+                key={p.id}
+                player={p}
+                state={state}
+                dispatch={dispatch}
+              />
             ))}
-          </tr>
-        </thead>
-        <tbody>
-          {grimoire.players.map((p) => (
-            <PlayerRow
-              key={p.id}
-              player={p}
-              state={state}
-              dispatch={dispatch}
-            />
-          ))}
-        </tbody>
-      </table>
-      <div style={{ marginTop: 8, fontSize: 12, color: "#666" }}>
-        {t("grimoire.imp_target")}: {grimoire.impTarget ?? "—"} &nbsp;|&nbsp;{" "}
-        {t("grimoire.monk_protecting")}: {grimoire.monkProtectionTarget ?? "—"}{" "}
-        &nbsp;|&nbsp; {t("grimoire.poisoner_target")}:{" "}
-        {grimoire.poisonerTarget ?? "—"} &nbsp;|&nbsp;{" "}
-        {t("grimoire.butler_master")}: {grimoire.butlerMaster ?? "—"}{" "}
-        &nbsp;|&nbsp; {t("grimoire.ft_red_herring")}:{" "}
-        {grimoire.fortuneTellerRedHerring ?? "—"}
+          </tbody>
+        </table>
       </div>
+
+      {/* Grimoire metadata */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+        <span>
+          {t("grimoire.imp_target")}:{" "}
+          <span className="text-slate-400">{grimoire.impTarget ?? "—"}</span>
+        </span>
+        <span>
+          {t("grimoire.monk_protecting")}:{" "}
+          <span className="text-slate-400">
+            {grimoire.monkProtectionTarget ?? "—"}
+          </span>
+        </span>
+        <span>
+          {t("grimoire.poisoner_target")}:{" "}
+          <span className="text-slate-400">
+            {grimoire.poisonerTarget ?? "—"}
+          </span>
+        </span>
+        <span>
+          {t("grimoire.butler_master")}:{" "}
+          <span className="text-slate-400">{grimoire.butlerMaster ?? "—"}</span>
+        </span>
+        <span>
+          {t("grimoire.ft_red_herring")}:{" "}
+          <span className="text-slate-400">
+            {grimoire.fortuneTellerRedHerring ?? "—"}
+          </span>
+        </span>
+      </div>
+
       {grimoire.demonBluffs.length > 0 && (
-        <div style={{ marginTop: 4, fontSize: 12, color: "#800" }}>
+        <div className="mt-2 text-xs text-red-400">
           {t("grimoire.demon_bluffs")}:{" "}
-          {grimoire.demonBluffs
-            .map((id) => t(`characters.${id}`, { defaultValue: id }))
-            .join(", ")}
+          <span className="text-red-300">
+            {grimoire.demonBluffs
+              .map((id) => t(`characters.${id}`, { defaultValue: id }))
+              .join(", ")}
+          </span>
         </div>
       )}
     </div>
@@ -444,53 +496,66 @@ function PlayerRow({
     ghostVoteUsed,
   } = player;
 
-  const cell = (content: React.ReactNode) => (
-    <td
-      style={{
-        border: "1px solid #ccc",
-        padding: "4px 8px",
-        textAlign: "center",
-      }}
-    >
-      {content}
-    </td>
+  const isCandidate = state.executionCandidateId === id;
+  const isEvil = alignment === "Demon" || alignment === "Minion";
+
+  const rowClass = cx(
+    "border-b border-slate-800 last:border-0 transition-colors",
+    !isAlive && "opacity-40",
+    isPoisoned && "bg-red-950/20",
+    isDrunk && !isPoisoned && "bg-yellow-950/20",
+    isCandidate && "bg-red-950/30",
   );
 
-  const rowStyle: React.CSSProperties = {
-    opacity: isAlive ? 1 : 0.45,
-    background: isPoisoned ? "#fff0f0" : isDrunk ? "#fffff0" : "white",
-  };
-
-  const isCandidate = state.executionCandidateId === id;
+  const cell = (content: React.ReactNode, extra?: string) => (
+    <td className={cx("px-3 py-2.5 text-center text-sm", extra)}>{content}</td>
+  );
 
   return (
-    <tr style={rowStyle}>
-      {cell(seatIndex + 1)}
+    <tr className={rowClass}>
+      {cell(<span className="text-slate-500">{seatIndex + 1}</span>)}
       {cell(
         <span
-          style={
-            isCandidate ? { fontWeight: "bold", color: "crimson" } : undefined
-          }
+          className={cx(
+            "font-medium",
+            isCandidate ? "text-red-400 font-bold" : "text-slate-200",
+          )}
         >
           {name}
         </span>,
+        "text-left",
       )}
-      {cell(t(`characters.${trueCharacter}`, { defaultValue: trueCharacter }))}
+      {cell(
+        <span className="capitalize text-slate-300">
+          {t(`characters.${trueCharacter}`, { defaultValue: trueCharacter })}
+        </span>,
+        "text-left",
+      )}
       {cell(
         <span
-          style={{
-            color:
-              alignment === "Demon" || alignment === "Minion" ? "red" : "blue",
-          }}
+          className={cx(
+            "text-xs font-semibold px-1.5 py-0.5 rounded",
+            isEvil
+              ? "text-red-400 bg-red-950/40"
+              : "text-blue-400 bg-blue-950/40",
+          )}
         >
           {alignment}
         </span>,
       )}
-      {cell(isAlive ? "✓" : "✗")}
-      {cell(isPoisoned ? "☠" : "")}
-      {cell(isDrunk ? "🍺" : "")}
-      {cell(isProtected ? "🛡" : "")}
-      {cell(ghostVoteUsed ? "✗" : isAlive ? "" : "✓")}
+      {cell(
+        <span className={isAlive ? "text-emerald-400" : "text-slate-600"}>
+          {isAlive ? "✓" : "✗"}
+        </span>,
+      )}
+      {cell(<span className="text-red-400">{isPoisoned ? "☠" : ""}</span>)}
+      {cell(<span className="text-amber-400">{isDrunk ? "🍺" : ""}</span>)}
+      {cell(<span className="text-blue-400">{isProtected ? "🛡" : ""}</span>)}
+      {cell(
+        <span className={ghostVoteUsed ? "text-slate-600" : "text-slate-400"}>
+          {ghostVoteUsed ? "✗" : isAlive ? "" : "✓"}
+        </span>,
+      )}
     </tr>
   );
 }
@@ -521,7 +586,7 @@ function NightPanel({
 
   return (
     <div>
-      <h2>
+      <h2 className="text-base font-semibold text-indigo-300 mb-4">
         {state.phase === "first-night"
           ? t("night.title_night1")
           : t("night.title_nightN", { day: state.day })}
@@ -625,11 +690,11 @@ function NightOrderPanel({
     : getEachNightOrder(grimoire, state.pendingRavenkeeperChoice);
 
   return (
-    <div>
+    <div className="space-y-2">
       {/* Pre-character steps (night 1 only) */}
       {preSteps.length > 0 && (
-        <div style={{ marginBottom: 12 }}>
-          <strong>{t("night.pre_steps_heading")}</strong>
+        <div className="mb-4">
+          <p className="section-label mb-2">{t("night.pre_steps_heading")}</p>
           {preSteps.map((step, i) => {
             const key = `pre-${i}`;
             const done = doneSteps.has(key);
@@ -641,25 +706,25 @@ function NightOrderPanel({
             return (
               <div
                 key={key}
-                style={{
-                  margin: "6px 0",
-                  padding: 8,
-                  border: "1px solid #ccc",
-                  borderRadius: 4,
-                  background: done ? "#f0fff0" : "white",
-                  opacity: done ? 0.6 : 1,
-                }}
+                className={cx(
+                  "mb-2 p-3 rounded-xl border transition-all",
+                  done
+                    ? "bg-emerald-950/20 border-emerald-800/40 opacity-60"
+                    : "bg-slate-800/50 border-slate-700",
+                )}
               >
-                <label style={{ cursor: "pointer" }}>
+                <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={done}
                     onChange={() => toggleDone(key)}
-                    style={{ marginRight: 6 }}
+                    className="accent-indigo-500 w-4 h-4"
                   />
-                  <strong>{translated.label}</strong>
+                  <span className="font-semibold text-sm text-slate-200">
+                    {translated.label}
+                  </span>
                 </label>
-                <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>
+                <div className="text-xs text-slate-400 mt-1.5 ml-6">
                   {translated.description}
                 </div>
               </div>
@@ -669,9 +734,9 @@ function NightOrderPanel({
       )}
 
       {/* Character night steps */}
-      <strong>{t("night.char_steps_heading")}</strong>
+      <p className="section-label mb-2">{t("night.char_steps_heading")}</p>
       {charSteps.length === 0 && (
-        <p style={{ color: "#888", fontSize: 13 }}>{t("night.no_steps")}</p>
+        <p className="text-slate-500 text-sm italic">{t("night.no_steps")}</p>
       )}
       {charSteps.map((step) => {
         const key = `char-${step.player.id}`;
@@ -761,41 +826,36 @@ function NightStepCard({
 
   return (
     <div
-      style={{
-        margin: "6px 0",
-        padding: 8,
-        border: "1px solid #ccc",
-        borderRadius: 4,
-        background: done ? "#f0fff0" : "white",
-        opacity: done ? 0.6 : 1,
-      }}
+      className={cx(
+        "p-3 rounded-xl border transition-all",
+        done
+          ? "bg-emerald-950/20 border-emerald-800/40 opacity-60"
+          : "bg-slate-800/50 border-slate-700",
+      )}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div className="flex items-center gap-2 mb-1">
         {!needsDispatch && (
           <input
             type="checkbox"
             checked={done}
             onChange={() => toggleDone(stepKey)}
+            className="accent-indigo-500 w-4 h-4"
           />
         )}
-        <strong style={{ textTransform: "capitalize" }}>{charName}</strong>
-        <span style={{ color: "#666" }}>— {step.player.name}</span>
+        <span className="font-semibold text-sm capitalize text-slate-200">
+          {charName}
+        </span>
+        <span className="text-slate-500 text-sm">— {step.player.name}</span>
       </div>
-      <div style={{ fontSize: 12, color: "#555", margin: "4px 0 6px 20px" }}>
-        {actionText}
-      </div>
+      <div className="text-xs text-slate-400 mb-2 ml-6">{actionText}</div>
 
       {needsDispatch && !done && (
-        <div
-          style={{
-            marginLeft: 20,
-            display: "flex",
-            gap: 6,
-            flexWrap: "wrap",
-            alignItems: "center",
-          }}
-        >
-          <select value={target1} onChange={(e) => setTarget1(e.target.value)}>
+        <div className="ml-6 flex gap-2 flex-wrap items-center">
+          <select
+            value={target1}
+            onChange={(e) => setTarget1(e.target.value)}
+            className="form-select"
+          >
             {alivePlayers
               .filter((p) =>
                 // Monk and Butler cannot target themselves
@@ -813,6 +873,7 @@ function NightStepCard({
             <select
               value={target2}
               onChange={(e) => setTarget2(e.target.value)}
+              className="form-select"
             >
               {alivePlayers.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -821,7 +882,9 @@ function NightStepCard({
               ))}
             </select>
           )}
-          <button onClick={handleDispatch}>{t("night.confirm_choice")}</button>
+          <button onClick={handleDispatch} className="btn-primary btn-sm">
+            {t("night.confirm_choice")}
+          </button>
         </div>
       )}
 
@@ -835,36 +898,27 @@ function NightStepCard({
 
       {/* Info delivery: send the Storyteller-composed info string to the player */}
       {INFO_DELIVERY_CHARS.has(step.character) && (
-        <div
-          style={{
-            marginLeft: 20,
-            marginTop: 6,
-            padding: "6px 8px",
-            background: "#fffbe6",
-            border: "1px solid #ffe58f",
-            borderRadius: 4,
-          }}
-        >
-          <div style={{ fontSize: 12, fontWeight: "bold", marginBottom: 4 }}>
+        <div className="ml-6 mt-2 p-3 bg-yellow-950/30 border border-yellow-700/50 rounded-lg">
+          <div className="text-xs font-semibold text-yellow-400 mb-2">
             {t("night.send_info_to", { name: step.player.name })}
           </div>
           {infoSent ? (
-            <div style={{ fontSize: 12, color: "#389e0d" }}>
+            <div className="text-xs text-emerald-400">
               {t("night.info_sent", { name: step.player.name })}
             </div>
           ) : (
-            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <div className="flex gap-2 items-center">
               <input
                 type="text"
                 value={infoText}
                 onChange={(e) => setInfoText(e.target.value)}
                 placeholder={t("night.compose_info")}
-                style={{ flex: 1, fontSize: 12, padding: "2px 6px" }}
+                className="form-input-sm flex-1"
               />
               <button
                 onClick={handleSendInfo}
                 disabled={infoText.trim() === ""}
-                style={{ fontSize: 12 }}
+                className="btn-warning btn-sm"
               >
                 {t("night.send")}
               </button>
@@ -899,31 +953,15 @@ function FortuneTellerHelper({
   });
 
   return (
-    <div
-      style={{
-        marginLeft: 20,
-        marginTop: 6,
-        padding: "6px 8px",
-        background: "#f0f5ff",
-        border: "1px solid #adc6ff",
-        borderRadius: 4,
-      }}
-    >
-      <div style={{ fontSize: 12, fontWeight: "bold", marginBottom: 4 }}>
+    <div className="ml-6 mt-2 p-3 bg-blue-950/30 border border-blue-700/50 rounded-lg">
+      <div className="text-xs font-semibold text-blue-400 mb-2">
         {t("night.ft_checks_2")}
       </div>
-      <div
-        style={{
-          display: "flex",
-          gap: 6,
-          flexWrap: "wrap",
-          alignItems: "center",
-        }}
-      >
+      <div className="flex gap-2 flex-wrap items-center">
         <select
           value={pick1}
           onChange={(e) => setPick1(e.target.value)}
-          style={{ fontSize: 12 }}
+          className="form-select"
         >
           {allPlayers.map((p) => (
             <option key={p.id} value={p.id}>
@@ -931,11 +969,11 @@ function FortuneTellerHelper({
             </option>
           ))}
         </select>
-        <span style={{ fontSize: 12 }}>&amp;</span>
+        <span className="text-slate-500 text-sm">&amp;</span>
         <select
           value={pick2}
           onChange={(e) => setPick2(e.target.value)}
-          style={{ fontSize: 12 }}
+          className="form-select"
         >
           {allPlayers.map((p) => (
             <option key={p.id} value={p.id}>
@@ -944,25 +982,22 @@ function FortuneTellerHelper({
           ))}
         </select>
         <span
-          style={{
-            fontSize: 13,
-            fontWeight: "bold",
-            padding: "2px 8px",
-            borderRadius: 4,
-            background: isYes ? "#f6ffed" : "#fff1f0",
-            color: isYes ? "#389e0d" : "#cf1322",
-            border: `1px solid ${isYes ? "#b7eb8f" : "#ffa39e"}`,
-          }}
+          className={cx(
+            "text-sm font-bold px-3 py-1 rounded-lg",
+            isYes
+              ? "bg-emerald-900/50 text-emerald-400 border border-emerald-700"
+              : "bg-red-900/50 text-red-400 border border-red-700",
+          )}
         >
           {t("night.ft_answer", {
             answer: isYes ? t("night.yes") : t("night.no"),
           })}
         </span>
-        <button onClick={toggleDone} style={{ fontSize: 12 }}>
+        <button onClick={toggleDone} className="btn-default btn-sm">
           {t("night.done")}
         </button>
       </div>
-      <div style={{ fontSize: 11, color: "#666", marginTop: 4 }}>
+      <div className="text-xs text-slate-500 mt-2">
         {t("night.ft_red_herring", { herring: redHerring ?? "—" })}
       </div>
     </div>
@@ -989,30 +1024,18 @@ function MayorRedirectPrompt({
   );
 
   return (
-    <div
-      style={{
-        margin: "12px 0",
-        padding: 12,
-        border: "2px solid goldenrod",
-        borderRadius: 6,
-        background: "#fffbe6",
-      }}
-    >
-      <strong>{t("mayor_prompt.title")}</strong>
-      <p style={{ fontSize: 13, margin: "4px 0" }}>
+    <div className="mb-4 p-4 panel-warn">
+      <strong className="text-yellow-300 text-sm">
+        {t("mayor_prompt.title")}
+      </strong>
+      <p className="text-sm text-slate-300 my-2">
         {t("mayor_prompt.description")}
       </p>
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          flexWrap: "wrap",
-          alignItems: "center",
-        }}
-      >
+      <div className="flex gap-2 flex-wrap items-center">
         <select
           value={redirectId ?? ""}
           onChange={(e) => setRedirectId(e.target.value || null)}
+          className="form-select"
         >
           <option value="">{t("mayor_prompt.no_redirect")}</option>
           {alivePlayers.map((p) => (
@@ -1028,11 +1051,12 @@ function MayorRedirectPrompt({
               targetId: redirectId,
             })
           }
+          className="btn-gold"
         >
           {t("mayor_prompt.set_redirect")}
         </button>
         {state.grimoire.mayorRedirectTarget && (
-          <span style={{ color: "green", fontSize: 13 }}>
+          <span className="text-emerald-400 text-sm">
             {t("mayor_prompt.redirect_set", {
               name:
                 state.grimoire.players.find(
@@ -1058,21 +1082,19 @@ function RavenkeeperChoicePrompt({
   const [targetId, setTargetId] = useState(allPlayers[0]?.id ?? "");
 
   return (
-    <div
-      style={{
-        margin: "12px 0",
-        padding: 12,
-        border: "2px solid #a00",
-        borderRadius: 6,
-        background: "#fff5f5",
-      }}
-    >
-      <strong>{t("ravenkeeper_prompt.title")}</strong>
-      <p style={{ fontSize: 13, margin: "4px 0" }}>
+    <div className="mb-4 p-4 panel-evil border-2">
+      <strong className="text-red-300 text-sm">
+        {t("ravenkeeper_prompt.title")}
+      </strong>
+      <p className="text-sm text-slate-300 my-2">
         {t("ravenkeeper_prompt.description")}
       </p>
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <select value={targetId} onChange={(e) => setTargetId(e.target.value)}>
+      <div className="flex gap-2 items-center">
+        <select
+          value={targetId}
+          onChange={(e) => setTargetId(e.target.value)}
+          className="form-select"
+        >
           {allPlayers.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name} {!p.isAlive ? `(${t("player.dead")})` : ""}
@@ -1082,14 +1104,15 @@ function RavenkeeperChoicePrompt({
         <button
           onClick={() => dispatch({ type: "ravenkeeper-choice", targetId })}
           disabled={!targetId}
+          className="btn-danger"
         >
           {t("ravenkeeper_prompt.confirm")}
         </button>
       </div>
       {targetId && (
-        <div style={{ marginTop: 6, fontSize: 13, color: "#555" }}>
+        <div className="mt-3 text-sm text-slate-400">
           {t("ravenkeeper_prompt.character_to_reveal")}{" "}
-          <strong>
+          <strong className="text-slate-200">
             {(() => {
               const charId = state.grimoire.players.find(
                 (p) => p.id === targetId,
@@ -1119,26 +1142,23 @@ function MinionPromotionPrompt({
   const [minionId, setMinionId] = useState(aliveMinions[0]?.id ?? "");
 
   return (
-    <div
-      style={{
-        margin: "12px 0",
-        padding: 12,
-        border: "2px solid #a00",
-        borderRadius: 6,
-        background: "#fff5f5",
-      }}
-    >
-      <strong>{t("minion_promotion.title")}</strong>
-      <p style={{ fontSize: 13, margin: "4px 0" }}>
+    <div className="mb-4 p-4 panel-evil border-2">
+      <strong className="text-red-300 text-sm">
+        {t("minion_promotion.title")}
+      </strong>
+      <p className="text-sm text-slate-300 my-2">
         {t("minion_promotion.description")}
       </p>
       {aliveMinions.length === 0 ? (
-        <p style={{ color: "crimson" }}>{t("minion_promotion.no_minions")}</p>
+        <p className="text-red-400 text-sm">
+          {t("minion_promotion.no_minions")}
+        </p>
       ) : (
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div className="flex gap-2 items-center">
           <select
             value={minionId}
             onChange={(e) => setMinionId(e.target.value)}
+            className="form-select"
           >
             {aliveMinions.map((p) => (
               <option key={p.id} value={p.id}>
@@ -1155,6 +1175,7 @@ function MinionPromotionPrompt({
               dispatch({ type: "storyteller-choose-minion", minionId })
             }
             disabled={!minionId}
+            className="btn-danger"
           >
             {t("minion_promotion.promote")}
           </button>
@@ -1184,20 +1205,32 @@ function DayControls({
 
   return (
     <div>
-      <h2>{t("day_controls.title")}</h2>
+      <h2 className="text-base font-semibold text-amber-300 mb-4">
+        {t("day_controls.title")}
+      </h2>
 
       {/* Execution candidate */}
       {executionCandidateId && (
-        <div style={{ marginBottom: 8 }}>
-          <strong>{t("day_controls.execution_candidate")}</strong>{" "}
-          {grimoire.players.find((p) => p.id === executionCandidateId)?.name ??
-            executionCandidateId}{" "}
-          ({t("day_controls.votes", { count: state.executionCandidateVotes })})
+        <div className="mb-4 p-3 panel-evil flex items-center gap-3 flex-wrap">
+          <span className="text-sm text-slate-300">
+            <strong className="text-red-300">
+              {t("day_controls.execution_candidate")}
+            </strong>{" "}
+            {grimoire.players.find((p) => p.id === executionCandidateId)
+              ?.name ?? executionCandidateId}{" "}
+            <span className="text-slate-500">
+              (
+              {t("day_controls.votes", {
+                count: state.executionCandidateVotes,
+              })}
+              )
+            </span>
+          </span>
           <button
-            style={{ marginLeft: 8 }}
             onClick={() =>
               dispatch({ type: "execute", targetId: executionCandidateId })
             }
+            className="btn-danger"
           >
             {t("day_controls.execute")}
           </button>
@@ -1239,12 +1272,14 @@ function NominationForm({
   );
 
   return (
-    <div>
-      <strong>{t("day_controls.nominate")}:</strong>
+    <div className="flex items-center gap-2 flex-wrap mb-4 p-3 card">
+      <span className="text-sm font-medium text-slate-300">
+        {t("day_controls.nominate")}:
+      </span>
       <select
         value={nominatorId}
         onChange={(e) => setNominatorId(e.target.value)}
-        style={{ margin: "0 4px" }}
+        className="form-select"
       >
         {eligibleNominators.map((p) => (
           <option key={p.id} value={p.id}>
@@ -1252,11 +1287,13 @@ function NominationForm({
           </option>
         ))}
       </select>
-      {t("day_controls.nominates")}
+      <span className="text-slate-500 text-sm">
+        {t("day_controls.nominates")}
+      </span>
       <select
         value={targetId}
         onChange={(e) => setTargetId(e.target.value)}
-        style={{ margin: "0 4px" }}
+        className="form-select"
       >
         {eligibleTargets.map((p) => (
           <option key={p.id} value={p.id}>
@@ -1267,6 +1304,7 @@ function NominationForm({
       <button
         onClick={() => dispatch({ type: "nominate", nominatorId, targetId })}
         disabled={!nominatorId || !targetId || nominatorId === targetId}
+        className="btn-warning"
       >
         {t("day_controls.nominate")}
       </button>
@@ -1298,28 +1336,37 @@ function VotePanel({
   );
 
   return (
-    <div style={{ border: "1px solid #aaa", padding: 12, marginTop: 8 }}>
-      <strong>{t("day_controls.vote_in_progress")}</strong>{" "}
-      {t("day_controls.execution_of", { name: targetName })}
-      <br />
-      {t("day_controls.threshold")}: {threshold} &nbsp;|&nbsp;{" "}
-      {t("day_controls.yes_so_far")}: {yesCount}
-      <br />
+    <div className="mb-4 p-4 card">
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
+        <strong className="text-slate-200 text-sm">
+          {t("day_controls.vote_in_progress")}
+        </strong>
+        <span className="text-slate-400 text-sm">
+          {t("day_controls.execution_of", { name: targetName })}
+        </span>
+        <span className="text-xs text-slate-500">
+          {t("day_controls.threshold")}: {threshold} &nbsp;|&nbsp;{" "}
+          {t("day_controls.yes_so_far")}: {yesCount}
+        </span>
+      </div>
       {pendingVoters.length > 0 && (
-        <div style={{ marginTop: 8 }}>
-          <strong>{t("day_controls.next_voter")}</strong>{" "}
-          {grimoire.players.find((p) => p.id === pendingVoters[0])?.name ??
-            pendingVoters[0]}
+        <div className="flex items-center gap-2 mt-3">
+          <span className="text-sm text-slate-400">
+            <strong className="text-slate-300">
+              {t("day_controls.next_voter")}
+            </strong>{" "}
+            {grimoire.players.find((p) => p.id === pendingVoters[0])?.name ??
+              pendingVoters[0]}
+          </span>
           <button
-            style={{ marginLeft: 8 }}
             onClick={() =>
               dispatch({ type: "vote", playerId: pendingVoters[0], vote: true })
             }
+            className="btn-success btn-sm"
           >
             {t("day_controls.yes")}
           </button>
           <button
-            style={{ marginLeft: 4 }}
             onClick={() =>
               dispatch({
                 type: "vote",
@@ -1327,6 +1374,7 @@ function VotePanel({
                 vote: false,
               })
             }
+            className="btn-danger btn-sm"
           >
             {t("day_controls.no")}
           </button>
@@ -1347,26 +1395,33 @@ function VoteTally({
   const { t } = useTranslation();
 
   return (
-    <table style={{ marginTop: 8, fontSize: 12 }}>
-      <tbody>
-        {voting.eligibleVoterIds.map((id) => {
-          const name = grimoire.players.find((p) => p.id === id)?.name ?? id;
-          const vote = voting.votes[id];
-          return (
-            <tr key={id}>
-              <td style={{ paddingRight: 8 }}>{name}</td>
-              <td>
-                {vote === undefined
-                  ? "—"
+    <div className="mt-3 border-t border-slate-700 pt-3">
+      {voting.eligibleVoterIds.map((id) => {
+        const name = grimoire.players.find((p) => p.id === id)?.name ?? id;
+        const vote = voting.votes[id];
+        return (
+          <div key={id} className="flex items-center gap-3 py-0.5 text-sm">
+            <span className="text-slate-400 w-24 truncate">{name}</span>
+            <span
+              className={cx(
+                "text-xs font-medium",
+                vote === undefined
+                  ? "text-slate-600"
                   : vote
-                    ? `✅ ${t("day_controls.yes")}`
-                    : `❌ ${t("day_controls.no")}`}
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
+                    ? "text-emerald-400"
+                    : "text-red-400",
+              )}
+            >
+              {vote === undefined
+                ? "—"
+                : vote
+                  ? `✅ ${t("day_controls.yes")}`
+                  : `❌ ${t("day_controls.no")}`}
+            </span>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -1389,12 +1444,14 @@ function SlayerPanel({
   if (!slayer || state.grimoire.slayerUsed) return <></>;
 
   return (
-    <div style={{ marginTop: 12 }}>
-      <strong>{t("slayer_st.label", { name: slayer.name })}</strong>
+    <div className="mt-4 p-3 panel-purple flex items-center gap-2 flex-wrap">
+      <strong className="text-purple-300 text-sm">
+        {t("slayer_st.label", { name: slayer.name })}
+      </strong>
       <select
         value={targetId}
         onChange={(e) => setTargetId(e.target.value)}
-        style={{ margin: "0 4px" }}
+        className="form-select"
       >
         {alive.map((p) => (
           <option key={p.id} value={p.id}>
@@ -1410,6 +1467,7 @@ function SlayerPanel({
             targetId,
           })
         }
+        className="btn-purple"
       >
         {t("slayer_st.shoot")}
       </button>

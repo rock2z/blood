@@ -21,6 +21,9 @@ const EVIL_CHARACTERS = new Set([
   ...TB_BY_ALIGNMENT.demons,
 ]);
 
+const cx = (...classes: (string | false | undefined | null)[]) =>
+  classes.filter(Boolean).join(" ");
+
 interface Props {
   state: PlayerSnapshot;
   send: SendFn;
@@ -38,49 +41,59 @@ export function PlayerView({
     send({ type: "action", payload: action });
 
   return (
-    <div
-      style={{
-        fontFamily: "sans-serif",
-        maxWidth: 480,
-        margin: "0 auto",
-        padding: 16,
-      }}
-    >
-      <h1 style={{ fontSize: 20 }}>{t("player.title")}</h1>
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <div className="max-w-md mx-auto px-4 py-6 pb-20">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6 pr-16">
+          <h1 className="text-xl font-bold text-slate-100">
+            {t("player.title")}
+          </h1>
+          <div className="flex items-center gap-2">
+            <span className="text-xs px-2 py-1 bg-slate-800 text-slate-400 rounded-md capitalize">
+              {phase}
+            </span>
+            <span className="text-xs text-slate-500">
+              {t("player.day")} {day}
+            </span>
+          </div>
+        </div>
 
-      <div style={{ marginBottom: 12 }}>
-        <strong>{t("player.phase")}</strong> {phase} &nbsp;
-        <strong>{t("player.day")}</strong> {day}
+        {/* Winner banner */}
         {winner && (
-          <span
-            style={{
-              color: winner === "good" ? "royalblue" : "crimson",
-              marginLeft: 12,
-              fontWeight: "bold",
-            }}
+          <div
+            className={cx(
+              "mb-6 p-4 rounded-xl text-center text-lg font-bold",
+              winner === "good"
+                ? "bg-blue-900/50 border-2 border-blue-500 text-blue-300"
+                : "bg-red-900/50 border-2 border-red-500 text-red-300",
+            )}
           >
-            {t("player.wins", { winner: winner.toUpperCase() })}
-          </span>
+            🏆 {t("player.wins", { winner: winner.toUpperCase() })}
+          </div>
         )}
-      </div>
 
-      <NightInfoPanel grimoire={grimoire} phase={phase} />
-      <MyCharacterCard grimoire={grimoire} />
-      <PlayerList
-        players={grimoire.players}
-        executionCandidateId={executionCandidateId}
-      />
-      {voting && <ActiveVote state={state} />}
-
-      <div style={{ marginTop: 16 }}>
-        <VoteButtons state={state} playerId={playerId} dispatch={dispatch} />
-        <NominatePanel state={state} playerId={playerId} dispatch={dispatch} />
-        <SlayerPanel state={state} playerId={playerId} dispatch={dispatch} />
-        <RavenkeeperPanel
-          state={state}
-          playerId={playerId}
-          dispatch={dispatch}
+        <NightInfoPanel grimoire={grimoire} phase={phase} />
+        <MyCharacterCard grimoire={grimoire} />
+        <PlayerList
+          players={grimoire.players}
+          executionCandidateId={executionCandidateId}
         />
+        {voting && <ActiveVote state={state} />}
+
+        <div className="mt-4 space-y-3">
+          <VoteButtons state={state} playerId={playerId} dispatch={dispatch} />
+          <NominatePanel
+            state={state}
+            playerId={playerId}
+            dispatch={dispatch}
+          />
+          <SlayerPanel state={state} playerId={playerId} dispatch={dispatch} />
+          <RavenkeeperPanel
+            state={state}
+            playerId={playerId}
+            dispatch={dispatch}
+          />
+        </div>
       </div>
     </div>
   );
@@ -99,61 +112,35 @@ function MyCharacterCard({
   const { myCharacter, myDemonBluffs } = grimoire;
 
   const isEvil = EVIL_CHARACTERS.has(myCharacter);
-  const borderColor = isEvil ? "crimson" : "royalblue";
-  const bgColor = isEvil ? "#fff5f5" : "#f5f8ff";
 
   return (
     <div
-      style={{
-        border: `2px solid ${borderColor}`,
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 16,
-        background: bgColor,
-      }}
+      className={cx(
+        "border-2 rounded-2xl p-5 mb-5",
+        isEvil
+          ? "border-red-500 bg-gradient-to-br from-red-950/50 to-slate-900"
+          : "border-blue-500 bg-gradient-to-br from-blue-950/50 to-slate-900",
+      )}
     >
-      <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-        {t("player.your_character")}
-      </div>
-      <div
-        style={{
-          fontSize: 22,
-          fontWeight: "bold",
-          textTransform: "capitalize",
-        }}
-      >
+      <div className="section-label mb-1">{t("player.your_character")}</div>
+      <div className="text-3xl font-bold text-slate-100 capitalize mt-1 mb-1">
         {t(`characters.${myCharacter}`, { defaultValue: myCharacter })}
       </div>
       <div
-        style={{
-          fontSize: 13,
-          color: isEvil ? "crimson" : "royalblue",
-          marginTop: 2,
-        }}
+        className={cx(
+          "text-sm font-semibold",
+          isEvil ? "text-red-400" : "text-blue-400",
+        )}
       >
         {isEvil ? t("player.evil") : t("player.good")}
       </div>
 
       {myDemonBluffs && myDemonBluffs.length > 0 && (
-        <div
-          style={{
-            marginTop: 8,
-            padding: "4px 8px",
-            background: "#fbe9e7",
-            borderRadius: 4,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 12,
-              fontWeight: "bold",
-              color: "#b71c1c",
-              marginBottom: 2,
-            }}
-          >
+        <div className="mt-3 p-3 bg-red-950/40 border border-red-800/60 rounded-lg">
+          <div className="text-xs font-bold text-red-400 uppercase tracking-wider mb-1">
             {t("player.demon_bluffs")}
           </div>
-          <div style={{ fontSize: 13, color: "#b71c1c" }}>
+          <div className="text-sm text-red-300">
             {myDemonBluffs
               .map((id) => t(`characters.${id}`, { defaultValue: id }))
               .join(", ")}
@@ -178,43 +165,47 @@ function PlayerList({
   const { t } = useTranslation();
 
   return (
-    <div>
-      <h2 style={{ fontSize: 16 }}>{t("player.players_title")}</h2>
-      <ul style={{ listStyle: "none", padding: 0 }}>
+    <div className="mb-5">
+      <h2 className="section-label mb-2">{t("player.players_title")}</h2>
+      <div className="card overflow-hidden">
         {players.map((p) => {
           const isCandidate = p.id === executionCandidateId;
           return (
-            <li
+            <div
               key={p.id}
-              style={{
-                padding: "6px 0",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                opacity: p.isAlive ? 1 : 0.45,
-                borderBottom: "1px solid #eee",
-                fontWeight: isCandidate ? "bold" : "normal",
-                color: isCandidate ? "crimson" : undefined,
-              }}
+              className={cx(
+                "flex items-center gap-3 px-4 py-3 border-b border-slate-800 last:border-0 transition-colors",
+                !p.isAlive && "opacity-40",
+                isCandidate && "bg-red-950/30",
+              )}
             >
-              <span style={{ width: 20, textAlign: "right", color: "#999" }}>
-                {p.seatIndex + 1}.
+              <span className="text-slate-600 text-xs w-5 text-right shrink-0">
+                {p.seatIndex + 1}
               </span>
-              <span style={{ flex: 1 }}>{p.name}</span>
+              <span
+                className={cx(
+                  "flex-1 font-medium text-sm",
+                  isCandidate ? "text-red-400 font-bold" : "text-slate-200",
+                )}
+              >
+                {p.name}
+              </span>
               {!p.isAlive && (
-                <span style={{ fontSize: 12, color: "#999" }}>
+                <span className="text-xs text-slate-600 bg-slate-800 px-2 py-0.5 rounded-md">
                   {p.ghostVoteUsed
                     ? t("player.dead_vote_used")
                     : t("player.dead")}
                 </span>
               )}
               {isCandidate && (
-                <span style={{ fontSize: 12 }}>{t("player.on_the_block")}</span>
+                <span className="text-xs text-red-400 font-medium shrink-0">
+                  {t("player.on_the_block")}
+                </span>
               )}
-            </li>
+            </div>
           );
         })}
-      </ul>
+      </div>
     </div>
   );
 }
@@ -237,17 +228,12 @@ function ActiveVote({ state }: { state: PlayerSnapshot }): React.ReactElement {
   const yesCount = Object.values(voting.votes).filter(Boolean).length;
 
   return (
-    <div
-      style={{
-        marginTop: 16,
-        padding: 12,
-        border: "1px solid #ccc",
-        borderRadius: 6,
-      }}
-    >
-      <strong>{t("player.vote_execute", { name: targetName })}</strong>
-      <div style={{ fontSize: 13, marginTop: 4, color: "#555" }}>
-        {t("player.need_votes", { threshold })} &nbsp;|&nbsp;{" "}
+    <div className="mb-5 p-4 card">
+      <div className="font-semibold text-slate-100 text-sm">
+        {t("player.vote_execute", { name: targetName })}
+      </div>
+      <div className="text-xs text-slate-400 mt-1.5">
+        {t("player.need_votes", { threshold })} &nbsp;·&nbsp;{" "}
         {t("player.yes_count", { count: yesCount })}
       </div>
     </div>
@@ -274,19 +260,13 @@ function NightInfoPanel({
     return <></>;
   }
   return (
-    <div
-      style={{
-        marginBottom: 12,
-        padding: "10px 14px",
-        background: "#e6f7ff",
-        border: "2px solid #1890ff",
-        borderRadius: 6,
-      }}
-    >
-      <div style={{ fontWeight: "bold", fontSize: 13, marginBottom: 4 }}>
+    <div className="mb-4 p-4 panel-night">
+      <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">
         {t("player.night_info_title")}
       </div>
-      <div style={{ fontSize: 14 }}>{grimoire.myNightInfo}</div>
+      <div className="text-slate-200 text-sm leading-relaxed">
+        {grimoire.myNightInfo}
+      </div>
     </div>
   );
 }
@@ -320,7 +300,7 @@ function VoteButtons({
         state.grimoire.players.find((p) => p.id === pendingVoter)?.name ??
         pendingVoter;
       return (
-        <div style={{ fontSize: 13, color: "#555", marginBottom: 8 }}>
+        <div className="text-sm text-slate-400 text-center py-2">
           {t("player.waiting_for", { name: voterName })}
         </div>
       );
@@ -333,42 +313,20 @@ function VoteButtons({
     voting.targetId;
 
   return (
-    <div
-      style={{
-        marginBottom: 12,
-        padding: 10,
-        border: "2px solid #faad14",
-        borderRadius: 6,
-        background: "#fffbe6",
-      }}
-    >
-      <div style={{ fontWeight: "bold", marginBottom: 6 }}>
+    <div className="p-4 bg-amber-950/30 border-2 border-amber-600/70 rounded-xl">
+      <div className="font-semibold text-slate-100 mb-3 text-sm">
         {t("player.your_vote_execute", { name: targetName })}
       </div>
-      <div style={{ display: "flex", gap: 8 }}>
+      <div className="flex gap-3">
         <button
           onClick={() => dispatch({ type: "vote", playerId, vote: true })}
-          style={{
-            background: "#52c41a",
-            color: "white",
-            border: "none",
-            borderRadius: 4,
-            padding: "6px 16px",
-            cursor: "pointer",
-          }}
+          className="btn-success flex-1 py-2.5 text-base"
         >
           {t("player.yes")}
         </button>
         <button
           onClick={() => dispatch({ type: "vote", playerId, vote: false })}
-          style={{
-            background: "#f5222d",
-            color: "white",
-            border: "none",
-            borderRadius: 4,
-            padding: "6px 16px",
-            cursor: "pointer",
-          }}
+          className="btn-danger flex-1 py-2.5 text-base"
         >
           {t("player.no")}
         </button>
@@ -410,22 +368,15 @@ function NominatePanel({
   const resolvedTarget = targetId || eligibleTargets[0]?.id;
 
   return (
-    <div
-      style={{
-        marginBottom: 12,
-        padding: 10,
-        border: "1px solid #d9d9d9",
-        borderRadius: 6,
-      }}
-    >
-      <div style={{ fontWeight: "bold", marginBottom: 6 }}>
+    <div className="p-4 card">
+      <div className="font-semibold text-slate-100 mb-3 text-sm">
         {t("player.nominate")}
       </div>
-      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+      <div className="flex gap-2 items-center">
         <select
           value={resolvedTarget}
           onChange={(e) => setTargetId(e.target.value)}
-          style={{ flex: 1 }}
+          className="form-select flex-1"
         >
           {eligibleTargets.map((p) => (
             <option key={p.id} value={p.id}>
@@ -441,6 +392,7 @@ function NominatePanel({
               targetId: resolvedTarget,
             })
           }
+          className="btn-default"
         >
           {t("player.nominate")}
         </button>
@@ -478,23 +430,15 @@ function SlayerPanel({
   const resolvedTarget = targetId || targets[0]?.id;
 
   return (
-    <div
-      style={{
-        marginBottom: 12,
-        padding: 10,
-        border: "1px solid #b37feb",
-        borderRadius: 6,
-        background: "#f9f0ff",
-      }}
-    >
-      <div style={{ fontWeight: "bold", marginBottom: 6 }}>
+    <div className="p-4 panel-purple">
+      <div className="font-semibold text-slate-100 mb-3 text-sm">
         {t("player.slayer_ability")}
       </div>
-      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+      <div className="flex gap-2 items-center">
         <select
           value={resolvedTarget}
           onChange={(e) => setTargetId(e.target.value)}
-          style={{ flex: 1 }}
+          className="form-select flex-1"
         >
           {targets.map((p) => (
             <option key={p.id} value={p.id}>
@@ -510,14 +454,7 @@ function SlayerPanel({
               targetId: resolvedTarget,
             })
           }
-          style={{
-            background: "#722ed1",
-            color: "white",
-            border: "none",
-            borderRadius: 4,
-            padding: "4px 12px",
-            cursor: "pointer",
-          }}
+          className="btn-purple"
         >
           {t("player.shoot")}
         </button>
@@ -550,23 +487,15 @@ function RavenkeeperPanel({
   const resolvedTarget = targetId || allPlayers[0]?.id;
 
   return (
-    <div
-      style={{
-        marginBottom: 12,
-        padding: 10,
-        border: "2px solid #1890ff",
-        borderRadius: 6,
-        background: "#e6f7ff",
-      }}
-    >
-      <div style={{ fontWeight: "bold", marginBottom: 6 }}>
+    <div className="p-4 panel-good border-2">
+      <div className="font-semibold text-slate-100 mb-3 text-sm">
         {t("player.ravenkeeper_title")}
       </div>
-      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+      <div className="flex gap-2 items-center">
         <select
           value={resolvedTarget}
           onChange={(e) => setTargetId(e.target.value)}
-          style={{ flex: 1 }}
+          className="form-select flex-1"
         >
           {allPlayers.map((p) => (
             <option key={p.id} value={p.id}>
@@ -578,6 +507,7 @@ function RavenkeeperPanel({
           onClick={() =>
             dispatch({ type: "ravenkeeper-choice", targetId: resolvedTarget })
           }
+          className="btn-primary"
         >
           {t("player.choose")}
         </button>
