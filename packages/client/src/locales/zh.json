@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "时钟塔上的鲜血",
+    "title": "血染钟楼",
     "connecting": "正在连接到房间 {{room}}…"
   },
   "phase_bar": {
@@ -26,7 +26,7 @@
     "add_player": "+ 添加玩家",
     "reroll": "↺ 重新随机角色",
     "start_game": "▶ 开始游戏",
-    "player_count_error": "《时钟塔上的鲜血》需要 5–15 名玩家。"
+    "player_count_error": "《血染钟楼》需要 5–15 名玩家。"
   },
   "grimoire": {
     "title": "魔法书",
@@ -39,7 +39,7 @@
     "drunk": "醉酒",
     "protected": "受保护",
     "ghost": "鬼票",
-    "imp_target": "小鬼目标",
+    "imp_target": "小恶魔目标",
     "monk_protecting": "僧侣保护",
     "poisoner_target": "投毒者目标",
     "butler_master": "管家主人",
@@ -69,53 +69,53 @@
       "minion_info_skip": "爪牙信息（跳过）",
       "minion_info_skip_desc": "玩家少于 7 人：爪牙不得知恶魔身份，说书人摇头。",
       "demon_info": "恶魔信息",
-      "demon_info_desc": "恶魔（小鬼）醒来，得知爪牙身份，并获得 3 个未入局的善良角色作为虚张声势选项，令其闭眼入睡。",
+      "demon_info_desc": "恶魔（小恶魔）醒来，得知爪牙身份，并获得 3 个未入局的善良角色作为虚张声势选项，令其闭眼入睡。",
       "demon_info_skip": "恶魔信息（跳过）",
       "demon_info_skip_desc": "玩家少于 7 人：恶魔不得知爪牙身份，说书人摇头。"
     },
     "actions": {
-      "washerwoman": "唤醒洗衣女。展示两名玩家（其中一人是指定的镇民），并展示该镇民的角色牌。",
+      "washerwoman": "唤醒洗衣妇。展示两名玩家（其中一人是指定的镇民），并展示该镇民的角色牌。",
       "librarian": "唤醒图书管理员。展示两名玩家（其中一人是指定的外来者），或展示零外来者的信息牌。",
       "investigator": "唤醒调查员。展示两名玩家（其中一人是指定的爪牙），并展示该爪牙的角色牌。",
       "chef": "唤醒厨师。数出圆圈中相邻邪恶玩家的对数，并伸出相应数量的手指。",
       "empath": "唤醒共情者。数出其两侧存活的邪恶邻居数量，伸出 0、1 或 2 根手指。",
       "fortuneteller": "唤醒占卜师。他们指向两名玩家，若其中一人是恶魔或诱饵则点头，否则摇头。",
-      "undertaker": "若今天有玩家被处决：唤醒殡葬师，展示被处决玩家的角色牌。",
+      "undertaker": "若今天有玩家被处决：唤醒送葬者，展示被处决玩家的角色牌。",
       "monk": "唤醒僧侣。他们指向一名玩家（非自身）进行保护。",
-      "ravenkeeper": "渡鸦守护者今晚死亡：唤醒他们，他们指向任意一名玩家，展示该玩家的角色牌。",
+      "ravenkeeper": "养鸦人今晚死亡：唤醒他们，他们指向任意一名玩家，展示该玩家的角色牌。",
       "virgin": "无夜晚行动。能力在白天提名时触发。",
       "slayer": "无夜晚行动。能力在白天公开使用。",
       "soldier": "无夜晚行动。被动免疫恶魔攻击。",
       "mayor": "无夜晚行动。死亡转移和胜利条件均为被动。",
       "butler": "唤醒管家。他们指向一名玩家（非自身）作为其主人。",
-      "drunk": "将醉鬼视为其所认为的镇民角色唤醒，提供错误或不可靠的信息。",
+      "drunk": "将酒鬼视为其所认为的镇民角色唤醒，提供错误或不可靠的信息。",
       "recluse": "无夜晚行动。被视为邪恶/爪牙/恶魔的判定由说书人在各次检测时决定。",
       "saint": "无夜晚行动。能力在被处决时触发。",
       "poisoner": "唤醒投毒者。他们指向任意一名玩家，该玩家今晚及明天白天处于中毒状态。",
       "spy": "唤醒间谍，展示打开的魔法书。",
       "scarletwoman": "无夜晚行动。当恶魔死亡且存活玩家不少于 5 人时自动转化。",
       "baron": "无夜晚行动。仅影响游戏设置（+2 名外来者）。",
-      "imp": "唤醒小鬼。他们指向任意一名玩家，该玩家死亡。若指向自身，触发自杀逻辑。"
+      "imp": "唤醒小恶魔。他们指向任意一名玩家，该玩家死亡。若指向自身，触发自杀逻辑。"
     }
   },
   "mayor_prompt": {
-    "title": "市长能力 — 小鬼锁定了市长！",
+    "title": "市长能力 — 小恶魔锁定了市长！",
     "description": "市长存活且状态良好。您可以将杀戮转移给另一名玩家，或让市长死亡。",
     "no_redirect": "— 市长死亡（不转移）—",
     "set_redirect": "设置转移",
     "redirect_set": "✓ 转移已设置 → {{name}}"
   },
   "ravenkeeper_prompt": {
-    "title": "渡鸦守护者今晚死亡 — 选择一名玩家揭示角色",
-    "description": "唤醒渡鸦守护者，他们指向任意玩家（存活或死亡），私下展示该玩家的角色牌。",
-    "confirm": "确认渡鸦守护者的选择",
+    "title": "养鸦人今晚死亡 — 选择一名玩家揭示角色",
+    "description": "唤醒养鸦人，他们指向任意玩家（存活或死亡），私下展示该玩家的角色牌。",
+    "confirm": "确认养鸦人的选择",
     "character_to_reveal": "即将揭示的角色："
   },
   "minion_promotion": {
-    "title": "小鬼自杀 — 选择哪名爪牙成为新的小鬼",
-    "description": "没有符合条件的血腥女人。选择一名存活的爪牙成为新的恶魔，秘密展示小鬼角色牌。",
+    "title": "小恶魔自杀 — 选择哪名爪牙成为新的小恶魔",
+    "description": "没有符合条件的红唇女郎。选择一名存活的爪牙成为新的恶魔，秘密展示小恶魔角色牌。",
     "no_minions": "没有存活的爪牙 — 善良方获胜！",
-    "promote": "晋升为小鬼"
+    "promote": "晋升为小恶魔"
   },
   "day_controls": {
     "title": "白天控制",
@@ -133,7 +133,7 @@
     "no": "反对"
   },
   "player": {
-    "title": "时钟塔上的鲜血",
+    "title": "血染钟楼",
     "phase": "阶段：",
     "day": "第",
     "wins": "{{winner}} 获胜",
@@ -154,39 +154,39 @@
     "no": "反对",
     "waiting_for": "等待 {{name}} 投票…",
     "nominate": "提名",
-    "slayer_ability": "屠夫能力 — 射击一名玩家",
+    "slayer_ability": "猎手能力 — 射击一名玩家",
     "shoot": "射击",
-    "ravenkeeper_title": "渡鸦守护者 — 选择一名玩家了解其角色",
+    "ravenkeeper_title": "养鸦人 — 选择一名玩家了解其角色",
     "choose": "选择",
     "dead_suffix": "（死亡）"
   },
   "characters": {
-    "washerwoman": "洗衣女",
+    "washerwoman": "洗衣妇",
     "librarian": "图书管理员",
     "investigator": "调查员",
     "chef": "厨师",
     "empath": "共情者",
     "fortuneteller": "占卜师",
-    "undertaker": "殡葬师",
+    "undertaker": "送葬者",
     "monk": "僧侣",
-    "ravenkeeper": "渡鸦守护者",
-    "virgin": "圣女",
-    "slayer": "屠夫",
+    "ravenkeeper": "养鸦人",
+    "virgin": "贞洁者",
+    "slayer": "猎手",
     "soldier": "士兵",
     "mayor": "市长",
     "butler": "管家",
-    "drunk": "醉鬼",
-    "recluse": "隐士",
+    "drunk": "酒鬼",
+    "recluse": "陌客",
     "saint": "圣人",
     "poisoner": "投毒者",
     "spy": "间谍",
-    "scarletwoman": "血腥女人",
+    "scarletwoman": "红唇女郎",
     "baron": "男爵",
-    "imp": "小鬼"
+    "imp": "小恶魔"
   },
   "slayer_st": {
-    "label": "屠夫（{{name}}）：",
-    "shoot": "屠夫：射击！"
+    "label": "猎手（{{name}}）：",
+    "shoot": "猎手：射击！"
   },
   "lang": {
     "en": "EN",
