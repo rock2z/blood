@@ -849,17 +849,27 @@ function NightStepCard({
       )}
 
       {/* Character-specific structured info helpers */}
-      {(step.character === "washerwoman" ||
-        step.character === "librarian" ||
-        step.character === "investigator") &&
-        !done && (
-          <TwoPlayerCharInfoHelper
-            character={step.character}
-            player={step.player}
-            state={state}
-            dispatch={dispatch}
-          />
-        )}
+      {step.character === "washerwoman" && !done && (
+        <WasherwomanInfoHelper
+          player={step.player}
+          state={state}
+          dispatch={dispatch}
+        />
+      )}
+      {step.character === "librarian" && !done && (
+        <LibrarianInfoHelper
+          player={step.player}
+          state={state}
+          dispatch={dispatch}
+        />
+      )}
+      {step.character === "investigator" && !done && (
+        <InvestigatorInfoHelper
+          player={step.player}
+          state={state}
+          dispatch={dispatch}
+        />
+      )}
       {step.character === "chef" && !done && (
         <ChefInfoHelper
           player={step.player}
@@ -946,36 +956,25 @@ function InfoDeliveryBox({
 }
 
 // ============================================================
-// Washerwoman / Librarian / Investigator — pick 2 players + 1 character
+// Washerwoman — pick 2 players + 1 Townsfolk character
 // ============================================================
 
-function TwoPlayerCharInfoHelper({
-  character,
+function WasherwomanInfoHelper({
   player,
   state,
   dispatch,
 }: {
-  character: "washerwoman" | "librarian" | "investigator";
   player: Player;
   state: GameState;
   dispatch: (a: Action) => void;
 }): React.ReactElement {
   const { t } = useTranslation();
   const allPlayers = state.grimoire.players;
-
-  const alignmentChars =
-    character === "washerwoman"
-      ? TB_BY_ALIGNMENT.townsfolk
-      : character === "librarian"
-        ? TB_BY_ALIGNMENT.outsiders
-        : TB_BY_ALIGNMENT.minions;
-
   const [p1, setP1] = useState(allPlayers[0]?.id ?? "");
   const [p2, setP2] = useState(allPlayers[1]?.id ?? "");
   const [charId, setCharId] = useState<CharacterId>(
-    alignmentChars[0] as CharacterId,
+    TB_BY_ALIGNMENT.townsfolk[0] as CharacterId,
   );
-  const [noOutsiders, setNoOutsiders] = useState(false);
   const [sent, setSent] = useState(false);
 
   const p1Name = allPlayers.find((p) => p.id === p1)?.name ?? p1;
@@ -983,11 +982,7 @@ function TwoPlayerCharInfoHelper({
   const charName = t(`characters.${charId}`, {
     defaultValue: TROUBLE_BREWING_CHARACTERS[charId]?.name ?? charId,
   });
-
-  const preview =
-    character === "librarian" && noOutsiders
-      ? t("night.info_no_outsiders")
-      : `${t("night.info_one_of")} ${p1Name} & ${p2Name} ${t("night.info_is_the")} ${charName}`;
+  const preview = `${t("night.info_one_of")} ${p1Name} & ${p2Name} ${t("night.info_is_the")} ${charName}`;
 
   const handleSend = () => {
     dispatch({
@@ -1000,7 +995,98 @@ function TwoPlayerCharInfoHelper({
 
   return (
     <>
-      {!(character === "librarian" && noOutsiders) && (
+      <div className="ml-6 mt-2 flex gap-2 flex-wrap items-center">
+        <select
+          value={p1}
+          onChange={(e) => setP1(e.target.value)}
+          className="form-select"
+        >
+          {allPlayers.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <span className="text-slate-500 text-xs">&amp;</span>
+        <select
+          value={p2}
+          onChange={(e) => setP2(e.target.value)}
+          className="form-select"
+        >
+          {allPlayers.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={charId}
+          onChange={(e) => setCharId(e.target.value as CharacterId)}
+          className="form-select"
+        >
+          {TB_BY_ALIGNMENT.townsfolk.map((id) => (
+            <option key={id} value={id}>
+              {t(`characters.${id}`, {
+                defaultValue: TROUBLE_BREWING_CHARACTERS[id]?.name ?? id,
+              })}
+            </option>
+          ))}
+        </select>
+      </div>
+      <InfoDeliveryBox
+        playerName={player.name}
+        preview={preview}
+        onSend={handleSend}
+        sent={sent}
+      />
+    </>
+  );
+}
+
+// ============================================================
+// Librarian — pick 2 players + 1 Outsider character, or "no Outsiders"
+// ============================================================
+
+function LibrarianInfoHelper({
+  player,
+  state,
+  dispatch,
+}: {
+  player: Player;
+  state: GameState;
+  dispatch: (a: Action) => void;
+}): React.ReactElement {
+  const { t } = useTranslation();
+  const allPlayers = state.grimoire.players;
+  const [p1, setP1] = useState(allPlayers[0]?.id ?? "");
+  const [p2, setP2] = useState(allPlayers[1]?.id ?? "");
+  const [charId, setCharId] = useState<CharacterId>(
+    TB_BY_ALIGNMENT.outsiders[0] as CharacterId,
+  );
+  const [noOutsiders, setNoOutsiders] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const p1Name = allPlayers.find((p) => p.id === p1)?.name ?? p1;
+  const p2Name = allPlayers.find((p) => p.id === p2)?.name ?? p2;
+  const charName = t(`characters.${charId}`, {
+    defaultValue: TROUBLE_BREWING_CHARACTERS[charId]?.name ?? charId,
+  });
+  const preview = noOutsiders
+    ? t("night.info_no_outsiders")
+    : `${t("night.info_one_of")} ${p1Name} & ${p2Name} ${t("night.info_is_the")} ${charName}`;
+
+  const handleSend = () => {
+    dispatch({
+      type: "storyteller-deliver-info",
+      playerId: player.id,
+      info: preview,
+    });
+    setSent(true);
+  };
+
+  return (
+    <>
+      {!noOutsiders && (
         <div className="ml-6 mt-2 flex gap-2 flex-wrap items-center">
           <select
             value={p1}
@@ -1030,7 +1116,7 @@ function TwoPlayerCharInfoHelper({
             onChange={(e) => setCharId(e.target.value as CharacterId)}
             className="form-select"
           >
-            {alignmentChars.map((id) => (
+            {TB_BY_ALIGNMENT.outsiders.map((id) => (
               <option key={id} value={id}>
                 {t(`characters.${id}`, {
                   defaultValue: TROUBLE_BREWING_CHARACTERS[id]?.name ?? id,
@@ -1040,23 +1126,109 @@ function TwoPlayerCharInfoHelper({
           </select>
         </div>
       )}
-      {character === "librarian" && (
-        <div className="ml-6 mt-1 flex items-center gap-2">
-          <input
-            type="checkbox"
-            id={`no-outsiders-${player.id}`}
-            checked={noOutsiders}
-            onChange={(e) => setNoOutsiders(e.target.checked)}
-            className="accent-indigo-500 w-4 h-4"
-          />
-          <label
-            htmlFor={`no-outsiders-${player.id}`}
-            className="text-xs text-slate-400 cursor-pointer"
-          >
-            {t("night.info_no_outsiders_label")}
-          </label>
-        </div>
-      )}
+      <div className="ml-6 mt-1 flex items-center gap-2">
+        <input
+          type="checkbox"
+          id={`no-outsiders-${player.id}`}
+          checked={noOutsiders}
+          onChange={(e) => setNoOutsiders(e.target.checked)}
+          className="accent-indigo-500 w-4 h-4"
+        />
+        <label
+          htmlFor={`no-outsiders-${player.id}`}
+          className="text-xs text-slate-400 cursor-pointer"
+        >
+          {t("night.info_no_outsiders_label")}
+        </label>
+      </div>
+      <InfoDeliveryBox
+        playerName={player.name}
+        preview={preview}
+        onSend={handleSend}
+        sent={sent}
+      />
+    </>
+  );
+}
+
+// ============================================================
+// Investigator — pick 2 players + 1 Minion character
+// ============================================================
+
+function InvestigatorInfoHelper({
+  player,
+  state,
+  dispatch,
+}: {
+  player: Player;
+  state: GameState;
+  dispatch: (a: Action) => void;
+}): React.ReactElement {
+  const { t } = useTranslation();
+  const allPlayers = state.grimoire.players;
+  const [p1, setP1] = useState(allPlayers[0]?.id ?? "");
+  const [p2, setP2] = useState(allPlayers[1]?.id ?? "");
+  const [charId, setCharId] = useState<CharacterId>(
+    TB_BY_ALIGNMENT.minions[0] as CharacterId,
+  );
+  const [sent, setSent] = useState(false);
+
+  const p1Name = allPlayers.find((p) => p.id === p1)?.name ?? p1;
+  const p2Name = allPlayers.find((p) => p.id === p2)?.name ?? p2;
+  const charName = t(`characters.${charId}`, {
+    defaultValue: TROUBLE_BREWING_CHARACTERS[charId]?.name ?? charId,
+  });
+  const preview = `${t("night.info_one_of")} ${p1Name} & ${p2Name} ${t("night.info_is_the")} ${charName}`;
+
+  const handleSend = () => {
+    dispatch({
+      type: "storyteller-deliver-info",
+      playerId: player.id,
+      info: preview,
+    });
+    setSent(true);
+  };
+
+  return (
+    <>
+      <div className="ml-6 mt-2 flex gap-2 flex-wrap items-center">
+        <select
+          value={p1}
+          onChange={(e) => setP1(e.target.value)}
+          className="form-select"
+        >
+          {allPlayers.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <span className="text-slate-500 text-xs">&amp;</span>
+        <select
+          value={p2}
+          onChange={(e) => setP2(e.target.value)}
+          className="form-select"
+        >
+          {allPlayers.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={charId}
+          onChange={(e) => setCharId(e.target.value as CharacterId)}
+          className="form-select"
+        >
+          {TB_BY_ALIGNMENT.minions.map((id) => (
+            <option key={id} value={id}>
+              {t(`characters.${id}`, {
+                defaultValue: TROUBLE_BREWING_CHARACTERS[id]?.name ?? id,
+              })}
+            </option>
+          ))}
+        </select>
+      </div>
       <InfoDeliveryBox
         playerName={player.name}
         preview={preview}
