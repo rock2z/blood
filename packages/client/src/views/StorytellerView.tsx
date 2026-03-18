@@ -7,7 +7,7 @@
  * is a UI prompt here.
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   GameState,
@@ -699,6 +699,31 @@ function NightOrderPanel({
           {preSteps.map((step, i) => {
             const key = `pre-${i}`;
             const done = doneSteps.has(key);
+
+            if (step.label === "Minion Info") {
+              return (
+                <MinionInfoPreStep
+                  key={key}
+                  done={done}
+                  state={state}
+                  dispatch={dispatch}
+                  onDone={() => toggleDone(key)}
+                />
+              );
+            }
+
+            if (step.label === "Demon Info") {
+              return (
+                <DemonInfoPreStep
+                  key={key}
+                  done={done}
+                  state={state}
+                  dispatch={dispatch}
+                  onDone={() => toggleDone(key)}
+                />
+              );
+            }
+
             const translated = translatePreStep(
               step.label,
               step.description,
@@ -956,6 +981,263 @@ function InfoDeliveryBox({
 }
 
 // ============================================================
+// Minion Info pre-step — auto-send info to all Minion players
+// ============================================================
+
+function MinionInfoPreStep({
+  done,
+  state,
+  dispatch,
+  onDone,
+}: {
+  done: boolean;
+  state: GameState;
+  dispatch: (a: Action) => void;
+  onDone: () => void;
+}): React.ReactElement {
+  const { t } = useTranslation();
+  const [sent, setSent] = useState(false);
+  const { grimoire } = state;
+
+  const minionPlayers = grimoire.players.filter(
+    (p) => TROUBLE_BREWING_CHARACTERS[p.trueCharacter]?.alignment === "Minion",
+  );
+  const demonPlayer = grimoire.players.find((p) => p.trueCharacter === "imp");
+
+  const minionNames = minionPlayers.map((p) => p.name).join(", ") || "—";
+  const demonName = demonPlayer?.name ?? "—";
+
+  const handleSend = () => {
+    const msg = t("night.pre_steps.minion_info_msg", {
+      minions: minionNames,
+      demon: demonName,
+    });
+    for (const mp of minionPlayers) {
+      dispatch({
+        type: "storyteller-deliver-info",
+        playerId: mp.id,
+        info: msg,
+      });
+    }
+    setSent(true);
+    onDone();
+  };
+
+  return (
+    <div
+      className={cx(
+        "mb-2 p-3 rounded-xl border transition-all",
+        done
+          ? "bg-emerald-950/20 border-emerald-500/20 opacity-50"
+          : "bg-white/[0.04] border-white/[0.08]",
+      )}
+    >
+      <div className="font-semibold text-sm text-slate-200 mb-1">
+        {t("night.pre_steps.minion_info")}
+      </div>
+      <div className="text-xs text-slate-400 mb-2">
+        {t("night.pre_steps.minion_info_desc")}
+      </div>
+      {!done && (
+        <div className="mt-2 p-3 bg-red-950/30 border border-red-700/50 rounded-lg">
+          <div className="text-xs text-slate-300 mb-2">
+            <span className="text-red-400 font-semibold">
+              {t("night.pre_steps.minions_label")}
+            </span>{" "}
+            {minionNames}
+            {" · "}
+            <span className="text-red-400 font-semibold">
+              {t("night.pre_steps.demon_label")}
+            </span>{" "}
+            {demonName}
+          </div>
+          {sent ? (
+            <div className="text-xs text-emerald-400">
+              {t("night.pre_steps.sent")}
+            </div>
+          ) : (
+            <button
+              onClick={handleSend}
+              disabled={minionPlayers.length === 0}
+              className="btn-warning btn-sm"
+            >
+              {t("night.pre_steps.send_to_minions")}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// Demon Info pre-step — bluff selection and auto-send to Demon
+// ============================================================
+
+function DemonInfoPreStep({
+  done,
+  state,
+  dispatch,
+  onDone,
+}: {
+  done: boolean;
+  state: GameState;
+  dispatch: (a: Action) => void;
+  onDone: () => void;
+}): React.ReactElement {
+  const { t } = useTranslation();
+  const [sent, setSent] = useState(false);
+  const { grimoire } = state;
+
+  const demonPlayer = grimoire.players.find((p) => p.trueCharacter === "imp");
+  const minionPlayers = grimoire.players.filter(
+    (p) => TROUBLE_BREWING_CHARACTERS[p.trueCharacter]?.alignment === "Minion",
+  );
+
+  // Good characters not in play — valid bluff pool
+  const inPlayCharIds = grimoire.players.map((p) => p.trueCharacter);
+  const goodCharPool = [
+    ...TB_BY_ALIGNMENT.townsfolk,
+    ...TB_BY_ALIGNMENT.outsiders,
+  ].filter((id) => !inPlayCharIds.includes(id as CharacterId)) as CharacterId[];
+
+  const defaultBluffs =
+    grimoire.demonBluffs.length >= 3
+      ? grimoire.demonBluffs
+      : goodCharPool.slice(0, 3);
+
+  const [bluff1, setBluff1] = useState<CharacterId>(
+    defaultBluffs[0] ?? goodCharPool[0],
+  );
+  const [bluff2, setBluff2] = useState<CharacterId>(
+    defaultBluffs[1] ?? goodCharPool[1],
+  );
+  const [bluff3, setBluff3] = useState<CharacterId>(
+    defaultBluffs[2] ?? goodCharPool[2],
+  );
+
+  const minionNames = minionPlayers.map((p) => p.name).join(", ") || "—";
+  const charLabel = (id: CharacterId) =>
+    t(`characters.${id}`, {
+      defaultValue: TROUBLE_BREWING_CHARACTERS[id]?.name ?? id,
+    });
+
+  const handleSend = () => {
+    if (!demonPlayer) return;
+    const bluffNames = [bluff1, bluff2, bluff3].map(charLabel).join(", ");
+    const msg = t("night.pre_steps.demon_info_msg", {
+      minions: minionNames,
+      bluffs: bluffNames,
+    });
+    dispatch({
+      type: "storyteller-deliver-info",
+      playerId: demonPlayer.id,
+      info: msg,
+    });
+    setSent(true);
+    onDone();
+  };
+
+  // Bluff selector: filters out the other two already-chosen bluffs
+  const BluffSelect = ({
+    value,
+    onChange,
+    exclude1,
+    exclude2,
+  }: {
+    value: CharacterId;
+    onChange: (v: CharacterId) => void;
+    exclude1: CharacterId;
+    exclude2: CharacterId;
+  }) => (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value as CharacterId)}
+      className="form-select"
+    >
+      {goodCharPool
+        .filter((id) => id === value || (id !== exclude1 && id !== exclude2))
+        .map((id) => (
+          <option key={id} value={id}>
+            {charLabel(id)}
+          </option>
+        ))}
+    </select>
+  );
+
+  return (
+    <div
+      className={cx(
+        "mb-2 p-3 rounded-xl border transition-all",
+        done
+          ? "bg-emerald-950/20 border-emerald-500/20 opacity-50"
+          : "bg-white/[0.04] border-white/[0.08]",
+      )}
+    >
+      <div className="font-semibold text-sm text-slate-200 mb-1">
+        {t("night.pre_steps.demon_info")}
+      </div>
+      <div className="text-xs text-slate-400 mb-2">
+        {t("night.pre_steps.demon_info_desc")}
+      </div>
+      {!done && (
+        <div className="mt-2 p-3 bg-red-950/30 border border-red-700/50 rounded-lg">
+          <div className="text-xs text-slate-300 mb-2">
+            <span className="text-red-400 font-semibold">
+              {t("night.pre_steps.demon_label")}
+            </span>{" "}
+            {demonPlayer?.name ?? "—"}
+            {" · "}
+            <span className="text-red-400 font-semibold">
+              {t("night.pre_steps.minions_label")}
+            </span>{" "}
+            {minionNames}
+          </div>
+          {sent ? (
+            <div className="text-xs text-emerald-400">
+              {t("night.pre_steps.sent")}
+            </div>
+          ) : (
+            <>
+              <div className="text-xs text-slate-400 mb-1">
+                {t("night.pre_steps.bluffs_label")}
+              </div>
+              <div className="flex gap-2 flex-wrap items-center mb-2">
+                <BluffSelect
+                  value={bluff1}
+                  onChange={setBluff1}
+                  exclude1={bluff2}
+                  exclude2={bluff3}
+                />
+                <BluffSelect
+                  value={bluff2}
+                  onChange={setBluff2}
+                  exclude1={bluff1}
+                  exclude2={bluff3}
+                />
+                <BluffSelect
+                  value={bluff3}
+                  onChange={setBluff3}
+                  exclude1={bluff1}
+                  exclude2={bluff2}
+                />
+              </div>
+              <button
+                onClick={handleSend}
+                disabled={!demonPlayer || goodCharPool.length < 3}
+                className="btn-warning btn-sm"
+              >
+                {t("night.pre_steps.send_to_demon")}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
 // Shared base: 2 players + 1 character from a given alignment list
 // ============================================================
 
@@ -976,21 +1258,38 @@ function TwoPlayerCharInfoBase({
   const allPlayers = state.grimoire.players;
   const [p1, setP1] = useState(allPlayers[0]?.id ?? "");
   const [p2, setP2] = useState(allPlayers[1]?.id ?? "");
-  const [charId, setCharId] = useState<CharacterId>(
-    characters[0] as CharacterId,
-  );
   const [noOutsiders, setNoOutsiders] = useState(false);
   const [sent, setSent] = useState(false);
+
+  // Limit character choices to those actually held by the two selected players
+  const p1Player = allPlayers.find((p) => p.id === p1);
+  const p2Player = allPlayers.find((p) => p.id === p2);
+  const validChars = characters.filter(
+    (id) =>
+      p1Player?.trueCharacter === id ||
+      p1Player?.perceivedCharacter === id ||
+      p2Player?.trueCharacter === id ||
+      p2Player?.perceivedCharacter === id,
+  );
+  const charOptions = validChars.length > 0 ? validChars : characters;
+
+  const [charId, setCharId] = useState<CharacterId>(
+    charOptions[0] as CharacterId,
+  );
+
+  // Keep charId valid whenever the two selected players change
+  useEffect(() => {
+    if (!charOptions.includes(charId)) {
+      setCharId((charOptions[0] ?? characters[0]) as CharacterId);
+    }
+  }, [p1, p2]); // intentionally omitting charOptions/charId/characters to only react to player changes
 
   const p1Name = allPlayers.find((p) => p.id === p1)?.name ?? p1;
   const p2Name = allPlayers.find((p) => p.id === p2)?.name ?? p2;
   const charName = t(`characters.${charId}`, {
     defaultValue: TROUBLE_BREWING_CHARACTERS[charId]?.name ?? charId,
   });
-  const preview =
-    noOutsidersOption && noOutsiders
-      ? t("night.info_no_outsiders")
-      : `${t("night.info_one_of")} ${p1Name} & ${p2Name} ${t("night.info_is_the")} ${charName}`;
+  const preview = `${t("night.info_one_of")} ${p1Name} & ${p2Name} ${t("night.info_is_the")} ${charName}`;
 
   const handleSend = () => {
     dispatch({
@@ -1001,39 +1300,58 @@ function TwoPlayerCharInfoBase({
     setSent(true);
   };
 
+  const handleNoOutsidersToggle = (checked: boolean) => {
+    setNoOutsiders(checked);
+    if (checked && !sent) {
+      dispatch({
+        type: "storyteller-deliver-info",
+        playerId: player.id,
+        info: t("night.info_no_outsiders"),
+      });
+      setSent(true);
+    }
+  };
+
   return (
     <>
-      {!(noOutsidersOption && noOutsiders) && (
+      {!noOutsiders && !sent && (
         <div className="ml-6 mt-2 flex gap-2 flex-wrap items-center">
+          {/* Player 1 — excludes the player selected as p2 */}
           <select
             value={p1}
             onChange={(e) => setP1(e.target.value)}
             className="form-select"
           >
-            {allPlayers.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
+            {allPlayers
+              .filter((p) => p.id !== p2)
+              .map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
           </select>
           <span className="text-slate-500 text-xs">&amp;</span>
+          {/* Player 2 — excludes the player selected as p1 */}
           <select
             value={p2}
             onChange={(e) => setP2(e.target.value)}
             className="form-select"
           >
-            {allPlayers.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
+            {allPlayers
+              .filter((p) => p.id !== p1)
+              .map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
           </select>
+          {/* Character — limited to chars actually held by p1 or p2 */}
           <select
             value={charId}
             onChange={(e) => setCharId(e.target.value as CharacterId)}
             className="form-select"
           >
-            {characters.map((id) => (
+            {charOptions.map((id) => (
               <option key={id} value={id}>
                 {t(`characters.${id}`, {
                   defaultValue:
@@ -1044,13 +1362,13 @@ function TwoPlayerCharInfoBase({
           </select>
         </div>
       )}
-      {noOutsidersOption && (
+      {noOutsidersOption && !sent && (
         <div className="ml-6 mt-1 flex items-center gap-2">
           <input
             type="checkbox"
             id={`no-outsiders-${player.id}`}
             checked={noOutsiders}
-            onChange={(e) => setNoOutsiders(e.target.checked)}
+            onChange={(e) => handleNoOutsidersToggle(e.target.checked)}
             className="accent-indigo-500 w-4 h-4"
           />
           <label
@@ -1061,12 +1379,19 @@ function TwoPlayerCharInfoBase({
           </label>
         </div>
       )}
-      <InfoDeliveryBox
-        playerName={player.name}
-        preview={preview}
-        onSend={handleSend}
-        sent={sent}
-      />
+      {!noOutsiders && (
+        <InfoDeliveryBox
+          playerName={player.name}
+          preview={preview}
+          onSend={handleSend}
+          sent={sent}
+        />
+      )}
+      {noOutsiders && sent && (
+        <div className="ml-6 mt-2 text-xs text-emerald-400">
+          {t("night.info_sent", { name: player.name })}
+        </div>
+      )}
     </>
   );
 }

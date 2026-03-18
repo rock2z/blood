@@ -79,7 +79,15 @@
       "demon_info": "恶魔信息",
       "demon_info_desc": "恶魔（小恶魔）醒来，得知爪牙身份，并获得 3 个未入局的善良角色作为虚张声势选项，令其闭眼入睡。",
       "demon_info_skip": "恶魔信息（跳过）",
-      "demon_info_skip_desc": "玩家少于 7 人：恶魔不得知爪牙身份，说书人摇头。"
+      "demon_info_skip_desc": "玩家少于 7 人：恶魔不得知爪牙身份，说书人摇头。",
+      "minions_label": "爪牙：",
+      "demon_label": "恶魔：",
+      "send_to_minions": "发送给所有爪牙",
+      "minion_info_msg": "同伴爪牙：{{minions}}。恶魔：{{demon}}",
+      "send_to_demon": "发送给恶魔",
+      "bluffs_label": "虚张声势牌（从未入局的善良角色中选 3 个）：",
+      "demon_info_msg": "爪牙：{{minions}}。你的虚张声势：{{bluffs}}",
+      "sent": "✓ 已发送"
     },
     "actions": {
       "washerwoman": "唤醒洗衣妇。展示两名玩家（其中一人是指定的镇民），并展示该镇民的角色牌。",
