@@ -6,6 +6,11 @@ import {
   checkWinCondition,
   executePlayer,
   tryActivateScarletWoman,
+  getDeadPlayers,
+  getPlayersByAlignment,
+  calcChefNumber,
+  calcEmpathNumber,
+  calcFortuneTellerResult,
 } from "../engine/grimoire";
 import { Player } from "../types";
 
@@ -162,6 +167,339 @@ describe("executePlayer", () => {
   });
 });
 
+describe("calcChefNumber", () => {
+  test("zero when no evil pairs are adjacent", () => {
+    // Seats: Townsfolk(0), Demon(1), Townsfolk(2)
+    const players = [
+      makePlayer({ id: "p0", alignment: "Townsfolk", seatIndex: 0 }),
+      makePlayer({
+        id: "p1",
+        alignment: "Demon",
+        trueCharacter: "imp",
+        seatIndex: 1,
+      }),
+      makePlayer({ id: "p2", alignment: "Townsfolk", seatIndex: 2 }),
+    ];
+    expect(calcChefNumber(createGrimoire(players))).toBe(0);
+  });
+
+  test("one evil pair when two evil players are adjacent", () => {
+    // Seats: Townsfolk(0), Demon(1), Minion(2), Townsfolk(3)
+    const players = [
+      makePlayer({ id: "p0", alignment: "Townsfolk", seatIndex: 0 }),
+      makePlayer({
+        id: "p1",
+        alignment: "Demon",
+        trueCharacter: "imp",
+        seatIndex: 1,
+      }),
+      makePlayer({
+        id: "p2",
+        alignment: "Minion",
+        trueCharacter: "poisoner",
+        seatIndex: 2,
+      }),
+      makePlayer({ id: "p3", alignment: "Townsfolk", seatIndex: 3 }),
+    ];
+    expect(calcChefNumber(createGrimoire(players))).toBe(1);
+  });
+
+  test("counts wrap-around evil pair (last seat adjacent to first seat)", () => {
+    // Seats: Minion(0), Townsfolk(1), Demon(2) → pair wraps: seat2-seat0
+    const players = [
+      makePlayer({
+        id: "p0",
+        alignment: "Minion",
+        trueCharacter: "poisoner",
+        seatIndex: 0,
+      }),
+      makePlayer({ id: "p1", alignment: "Townsfolk", seatIndex: 1 }),
+      makePlayer({
+        id: "p2",
+        alignment: "Demon",
+        trueCharacter: "imp",
+        seatIndex: 2,
+      }),
+    ];
+    expect(calcChefNumber(createGrimoire(players))).toBe(1);
+  });
+
+  test("counts multiple disjoint evil pairs", () => {
+    // Seats: Demon(0), Minion(1), Townsfolk(2), Minion(3), Townsfolk(4), Minion(5)
+    // Pairs: 0-1=evil, 3-4=no, 4-5=no, 5-0=evil(wrap)
+    const players = [
+      makePlayer({
+        id: "p0",
+        alignment: "Demon",
+        trueCharacter: "imp",
+        seatIndex: 0,
+      }),
+      makePlayer({
+        id: "p1",
+        alignment: "Minion",
+        trueCharacter: "poisoner",
+        seatIndex: 1,
+      }),
+      makePlayer({ id: "p2", alignment: "Townsfolk", seatIndex: 2 }),
+      makePlayer({
+        id: "p3",
+        alignment: "Minion",
+        trueCharacter: "spy",
+        seatIndex: 3,
+      }),
+      makePlayer({ id: "p4", alignment: "Townsfolk", seatIndex: 4 }),
+      makePlayer({
+        id: "p5",
+        alignment: "Minion",
+        trueCharacter: "scarletwoman",
+        seatIndex: 5,
+      }),
+    ];
+    // Adjacent evil: (0,1)=yes, (1,2)=no, (2,3)=no, (3,4)=no, (4,5)=no, (5,0)=yes → 2
+    expect(calcChefNumber(createGrimoire(players))).toBe(2);
+  });
+
+  test("three-in-a-row evil counts as two pairs", () => {
+    // Seats: Demon(0), Minion(1), Minion(2), Townsfolk(3)
+    // Pairs: (0,1)=yes, (1,2)=yes, (2,3)=no, (3,0)=no → 2
+    const players = [
+      makePlayer({
+        id: "p0",
+        alignment: "Demon",
+        trueCharacter: "imp",
+        seatIndex: 0,
+      }),
+      makePlayer({
+        id: "p1",
+        alignment: "Minion",
+        trueCharacter: "poisoner",
+        seatIndex: 1,
+      }),
+      makePlayer({
+        id: "p2",
+        alignment: "Minion",
+        trueCharacter: "spy",
+        seatIndex: 2,
+      }),
+      makePlayer({ id: "p3", alignment: "Townsfolk", seatIndex: 3 }),
+    ];
+    expect(calcChefNumber(createGrimoire(players))).toBe(2);
+  });
+});
+
+describe("calcEmpathNumber", () => {
+  test("returns 0 when both living neighbours are good", () => {
+    // Seats: Townsfolk(0), Empath(1), Townsfolk(2)
+    const players = [
+      makePlayer({ id: "left", alignment: "Townsfolk", seatIndex: 0 }),
+      makePlayer({
+        id: "empath",
+        alignment: "Townsfolk",
+        trueCharacter: "empath",
+        seatIndex: 1,
+      }),
+      makePlayer({ id: "right", alignment: "Townsfolk", seatIndex: 2 }),
+    ];
+    expect(calcEmpathNumber(createGrimoire(players), "empath")).toBe(0);
+  });
+
+  test("returns 1 when one living neighbour is evil", () => {
+    const players = [
+      makePlayer({
+        id: "left",
+        alignment: "Demon",
+        trueCharacter: "imp",
+        seatIndex: 0,
+      }),
+      makePlayer({
+        id: "empath",
+        alignment: "Townsfolk",
+        trueCharacter: "empath",
+        seatIndex: 1,
+      }),
+      makePlayer({ id: "right", alignment: "Townsfolk", seatIndex: 2 }),
+    ];
+    expect(calcEmpathNumber(createGrimoire(players), "empath")).toBe(1);
+  });
+
+  test("returns 2 when both living neighbours are evil", () => {
+    const players = [
+      makePlayer({
+        id: "left",
+        alignment: "Demon",
+        trueCharacter: "imp",
+        seatIndex: 0,
+      }),
+      makePlayer({
+        id: "empath",
+        alignment: "Townsfolk",
+        trueCharacter: "empath",
+        seatIndex: 1,
+      }),
+      makePlayer({
+        id: "right",
+        alignment: "Minion",
+        trueCharacter: "poisoner",
+        seatIndex: 2,
+      }),
+    ];
+    expect(calcEmpathNumber(createGrimoire(players), "empath")).toBe(2);
+  });
+
+  test("skips dead players when finding living neighbours", () => {
+    // Seats: Evil(0, dead), Empath(1), Evil(2, dead), Good(3)
+    // Left living neighbour = seat3 (good, wrapping), right living neighbour = seat3 (good)
+    const players = [
+      makePlayer({
+        id: "dead-evil-left",
+        alignment: "Minion",
+        trueCharacter: "poisoner",
+        seatIndex: 0,
+        isAlive: false,
+      }),
+      makePlayer({
+        id: "empath",
+        alignment: "Townsfolk",
+        trueCharacter: "empath",
+        seatIndex: 1,
+      }),
+      makePlayer({
+        id: "dead-evil-right",
+        alignment: "Demon",
+        trueCharacter: "imp",
+        seatIndex: 2,
+        isAlive: false,
+      }),
+      makePlayer({ id: "alive-good", alignment: "Townsfolk", seatIndex: 3 }),
+    ];
+    // Both living neighbours from empath's perspective are seat3 (only alive non-empath)
+    expect(calcEmpathNumber(createGrimoire(players), "empath")).toBe(0);
+  });
+
+  test("wraps around the circle correctly", () => {
+    // Seats: Empath(0), Townsfolk(1), Evil(2)
+    // Left living neighbour (wrapping) = seat2 (evil)
+    const players = [
+      makePlayer({
+        id: "empath",
+        alignment: "Townsfolk",
+        trueCharacter: "empath",
+        seatIndex: 0,
+      }),
+      makePlayer({ id: "good", alignment: "Townsfolk", seatIndex: 1 }),
+      makePlayer({
+        id: "evil",
+        alignment: "Demon",
+        trueCharacter: "imp",
+        seatIndex: 2,
+      }),
+    ];
+    expect(calcEmpathNumber(createGrimoire(players), "empath")).toBe(1);
+  });
+
+  test("returns 0 for unknown player id", () => {
+    const players = [
+      makePlayer({ id: "p1", alignment: "Townsfolk", seatIndex: 0 }),
+    ];
+    expect(calcEmpathNumber(createGrimoire(players), "nonexistent")).toBe(0);
+  });
+
+  test("returns 0 when all neighbours are dead (findLivingNeighbor returns undefined)", () => {
+    // Only the empath is alive; left and right are both dead
+    const players = [
+      makePlayer({
+        id: "left",
+        alignment: "Demon",
+        trueCharacter: "imp",
+        seatIndex: 0,
+        isAlive: false,
+      }),
+      makePlayer({
+        id: "empath",
+        alignment: "Townsfolk",
+        trueCharacter: "empath",
+        seatIndex: 1,
+      }),
+      makePlayer({
+        id: "right",
+        alignment: "Minion",
+        trueCharacter: "poisoner",
+        seatIndex: 2,
+        isAlive: false,
+      }),
+    ];
+    expect(calcEmpathNumber(createGrimoire(players), "empath")).toBe(0);
+  });
+});
+
+describe("calcFortuneTellerResult", () => {
+  function makeGrimoireWithRedHerring(redHerringId: string | null) {
+    const players = [
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 0,
+      }),
+      makePlayer({
+        id: "tf1",
+        trueCharacter: "washerwoman",
+        alignment: "Townsfolk",
+        seatIndex: 1,
+      }),
+      makePlayer({
+        id: "tf2",
+        trueCharacter: "empath",
+        alignment: "Townsfolk",
+        seatIndex: 2,
+      }),
+      makePlayer({
+        id: "rh",
+        trueCharacter: "chef",
+        alignment: "Townsfolk",
+        seatIndex: 3,
+      }),
+    ];
+    const g = createGrimoire(players);
+    return { ...g, fortuneTellerRedHerring: redHerringId };
+  }
+
+  test("returns true when target1 is the Demon", () => {
+    const g = makeGrimoireWithRedHerring(null);
+    expect(calcFortuneTellerResult(g, "imp", "tf1")).toBe(true);
+  });
+
+  test("returns true when target2 is the Demon", () => {
+    const g = makeGrimoireWithRedHerring(null);
+    expect(calcFortuneTellerResult(g, "tf1", "imp")).toBe(true);
+  });
+
+  test("returns true when target1 is the red herring (not Demon)", () => {
+    const g = makeGrimoireWithRedHerring("rh");
+    expect(calcFortuneTellerResult(g, "rh", "tf1")).toBe(true);
+  });
+
+  test("returns true when target2 is the red herring", () => {
+    const g = makeGrimoireWithRedHerring("rh");
+    expect(calcFortuneTellerResult(g, "tf1", "rh")).toBe(true);
+  });
+
+  test("returns false when neither target is Demon or red herring", () => {
+    const g = makeGrimoireWithRedHerring("rh");
+    expect(calcFortuneTellerResult(g, "tf1", "tf2")).toBe(false);
+  });
+
+  test("returns false when red herring is null and no Demon targeted", () => {
+    const g = makeGrimoireWithRedHerring(null);
+    expect(calcFortuneTellerResult(g, "tf1", "tf2")).toBe(false);
+  });
+
+  test("returns true when both Demon and red herring are targeted", () => {
+    const g = makeGrimoireWithRedHerring("rh");
+    expect(calcFortuneTellerResult(g, "imp", "rh")).toBe(true);
+  });
+});
+
 describe("tryActivateScarletWoman", () => {
   test("activates when 5+ alive and Scarlet Woman is alive", () => {
     const players = Array.from({ length: 5 }, (_, i) =>
@@ -207,5 +545,31 @@ describe("tryActivateScarletWoman", () => {
     const g = createGrimoire(players);
     const { activated } = tryActivateScarletWoman(g);
     expect(activated).toBe(false);
+  });
+});
+
+describe("getDeadPlayers", () => {
+  test("returns only dead players", () => {
+    const players = [
+      makePlayer({ id: "alive", isAlive: true }),
+      makePlayer({ id: "dead", isAlive: false }),
+    ];
+    const g = createGrimoire(players);
+    const dead = getDeadPlayers(g);
+    expect(dead).toHaveLength(1);
+    expect(dead[0].id).toBe("dead");
+  });
+});
+
+describe("getPlayersByAlignment", () => {
+  test("returns players matching the given alignment", () => {
+    const players = [
+      makePlayer({ id: "tf", alignment: "Townsfolk" }),
+      makePlayer({ id: "demon", alignment: "Demon", trueCharacter: "imp" }),
+    ];
+    const g = createGrimoire(players);
+    expect(getPlayersByAlignment(g, "Demon")).toHaveLength(1);
+    expect(getPlayersByAlignment(g, "Demon")[0].id).toBe("demon");
+    expect(getPlayersByAlignment(g, "Townsfolk")).toHaveLength(1);
   });
 });
