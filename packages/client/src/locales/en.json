@@ -83,6 +83,7 @@
       "minions_label": "Minions:",
       "demon_label": "Demon:",
       "send_to_minions": "Send to all Minions",
+      "resend_to_minions": "Resend to Minions",
       "minion_info_msg": "Fellow Minions: {{minions}}. The Demon: {{demon}}",
       "send_to_demon": "Send to Demon",
       "bluffs_label": "Bluff tokens (select 3 good characters not in play):",

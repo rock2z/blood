@@ -83,6 +83,7 @@
       "minions_label": "爪牙：",
       "demon_label": "恶魔：",
       "send_to_minions": "发送给所有爪牙",
+      "resend_to_minions": "重新发送给爪牙",
       "minion_info_msg": "同伴爪牙：{{minions}}。恶魔：{{demon}}",
       "send_to_demon": "发送给恶魔",
       "bluffs_label": "虚张声势牌（从未入局的善良角色中选 3 个）：",

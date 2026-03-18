@@ -1007,8 +1007,7 @@ function MinionInfoPreStep({
   const minionNames = minionPlayers.map((p) => p.name).join(", ") || "—";
   const demonName = demonPlayer?.name ?? "—";
 
-  useEffect(() => {
-    if (done || minionPlayers.length === 0) return;
+  const handleSend = () => {
     const msg = t("night.pre_steps.minion_info_msg", {
       minions: minionNames,
       demon: demonName,
@@ -1022,6 +1021,11 @@ function MinionInfoPreStep({
     }
     setSent(true);
     onDone();
+  };
+
+  useEffect(() => {
+    if (done || minionPlayers.length === 0) return;
+    handleSend();
   }, []);
 
   return (
@@ -1052,11 +1056,22 @@ function MinionInfoPreStep({
             </span>{" "}
             {demonName}
           </div>
-          {sent && (
-            <div className="text-xs text-emerald-400">
-              {t("night.pre_steps.sent")}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {sent && (
+              <span className="text-xs text-emerald-400">
+                {t("night.pre_steps.sent")}
+              </span>
+            )}
+            <button
+              onClick={handleSend}
+              disabled={minionPlayers.length === 0}
+              className="btn-warning btn-sm"
+            >
+              {sent
+                ? t("night.pre_steps.resend_to_minions")
+                : t("night.pre_steps.send_to_minions")}
+            </button>
+          </div>
         </div>
       )}
     </div>
