@@ -538,8 +538,8 @@ describe("resolve-night — Imp self-kill (Minion promotion)", () => {
   });
 });
 
-describe("resolve-night — Monk protecting Imp does not block self-kill", () => {
-  test("Monk protecting Imp: self-kill still resolves via Imp self-kill logic", () => {
+describe("resolve-night — Monk protecting Imp blocks self-kill", () => {
+  test("healthy Monk protecting Imp: self-kill is prevented, Imp stays alive", () => {
     const players = [
       makePlayer({
         id: "imp",
@@ -552,7 +552,7 @@ describe("resolve-night — Monk protecting Imp does not block self-kill", () =>
     ];
     let s = dayState(players);
     s = dispatch(s, { type: "advance-to-night" });
-    // Monk protects Imp; Imp self-targets
+    // Monk protects Imp; Imp self-targets — self-kill must be blocked
     s = dispatch(s, {
       type: "night-choice",
       playerId: "monk",
@@ -565,12 +565,45 @@ describe("resolve-night — Monk protecting Imp does not block self-kill", () =>
     });
     s = dispatch(s, { type: "resolve-night" });
 
+    // Imp must survive; game continues (no game-over)
+    expect(s.grimoire.players.find((p) => p.id === "imp")!.isAlive).toBe(true);
+    expect(s.phase).toBe("day");
+    expect(s.winner).toBeNull();
+  });
+
+  test("poisoned Monk does NOT block Imp self-kill", () => {
+    const players = [
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 0,
+      }),
+      makePlayer({ id: "monk", trueCharacter: "monk", seatIndex: 1 }),
+      makePlayer({ id: "p1", seatIndex: 2 }),
+    ];
+    let s = dayState(players);
+    s = dispatch(s, { type: "advance-to-night" });
+    s = poisonPlayer(s, "monk");
+    s = dispatch(s, {
+      type: "night-choice",
+      playerId: "monk",
+      targetIds: ["imp"],
+    });
+    s = dispatch(s, {
+      type: "night-choice",
+      playerId: "imp",
+      targetIds: ["imp"],
+    });
+    s = dispatch(s, { type: "resolve-night" });
+
+    // Monk is poisoned → protection is ineffective → Imp dies (no minions → good wins)
     expect(s.grimoire.players.find((p) => p.id === "imp")!.isAlive).toBe(false);
-    expect(s.phase).toBe("game-over");
     expect(s.winner).toBe("good");
   });
 
-  test("self-kill is not blocked by stale protection flag on current Imp", () => {
+  test("self-kill is not blocked by stale isProtected flag when no Monk is in play", () => {
+    // Imp has isProtected=true from a previous night but no Monk exists
     const players = [
       makePlayer({
         id: "new-imp",
@@ -592,6 +625,7 @@ describe("resolve-night — Monk protecting Imp does not block self-kill", () =>
     });
     s = dispatch(s, { type: "resolve-night" });
 
+    // No Monk in play → stale flag is harmless → self-kill proceeds → good wins
     expect(s.grimoire.players.find((p) => p.id === "new-imp")!.isAlive).toBe(
       false,
     );
@@ -872,6 +906,13 @@ describe("nominate", () => {
     }),
   ];
 
+  test("throws when nominate is called outside day phase", () => {
+    const s = firstNightState(basicPlayers());
+    expect(() =>
+      dispatch(s, { type: "nominate", nominatorId: "p1", targetId: "p2" }),
+    ).toThrow(`nominate requires phase "day"`);
+  });
+
   test("creates a VotingState with correct nominator and target", () => {
     let s = dayState(basicPlayers());
     s = dispatch(s, { type: "nominate", nominatorId: "p1", targetId: "p2" });
@@ -953,37 +994,41 @@ describe("nominate", () => {
   });
 
   test("throws when dead player nominates", () => {
+    // Need 3+ alive so evil 2-alive win doesn't trigger at first-night end.
     const players = [
       makePlayer({ id: "p1", isAlive: false, seatIndex: 0 }),
       makePlayer({ id: "p2", seatIndex: 1 }),
+      makePlayer({ id: "p3", seatIndex: 2 }),
       makePlayer({
         id: "imp",
         trueCharacter: "imp",
         alignment: "Demon",
-        seatIndex: 2,
+        seatIndex: 3,
       }),
     ];
     const s = dayState(players);
     expect(() =>
       dispatch(s, { type: "nominate", nominatorId: "p1", targetId: "p2" }),
-    ).toThrow();
+    ).toThrow("Dead players cannot nominate");
   });
 
   test("throws when dead player is nominated", () => {
+    // Need 3+ alive so evil 2-alive win doesn't trigger at first-night end.
     const players = [
       makePlayer({ id: "p1", seatIndex: 0 }),
       makePlayer({ id: "p2", isAlive: false, seatIndex: 1 }),
+      makePlayer({ id: "p3", seatIndex: 2 }),
       makePlayer({
         id: "imp",
         trueCharacter: "imp",
         alignment: "Demon",
-        seatIndex: 2,
+        seatIndex: 3,
       }),
     ];
     const s = dayState(players);
     expect(() =>
       dispatch(s, { type: "nominate", nominatorId: "p1", targetId: "p2" }),
-    ).toThrow();
+    ).toThrow("Dead players cannot be nominated");
   });
 });
 
@@ -1916,11 +1961,13 @@ describe("slayer-shoot", () => {
         isAlive: false,
         seatIndex: 0,
       }),
+      makePlayer({ id: "p1", seatIndex: 1 }),
+      makePlayer({ id: "p2", seatIndex: 2 }),
       makePlayer({
         id: "imp",
         trueCharacter: "imp",
         alignment: "Demon",
-        seatIndex: 1,
+        seatIndex: 3,
       }),
     ];
     const s = dayState(players);
@@ -1930,7 +1977,7 @@ describe("slayer-shoot", () => {
         slayerId: "slayer",
         targetId: "imp",
       }),
-    ).toThrow();
+    ).toThrow("Dead players cannot use the Slayer ability");
   });
 
   test("shooting Demon with eligible Scarlet Woman — SW takes over, game continues", () => {
@@ -2405,6 +2452,192 @@ describe("nominate — Virgin self-nomination", () => {
       false,
     );
     expect(s.grimoire.virginAbilityFired).toBe(true);
+  });
+});
+
+// ============================================================
+// Additional coverage: uncovered error paths and branches
+// ============================================================
+
+describe("dispatch — unknown action type", () => {
+  test("throws for an unrecognised action type", () => {
+    const players = [
+      makePlayer({ id: "p1", seatIndex: 0 }),
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 1,
+      }),
+    ];
+    const s = dayState(players);
+    expect(() =>
+      dispatch(s, {
+        type: "totally-unknown",
+      } as unknown as import("../engine/actions").Action),
+    ).toThrow();
+  });
+});
+
+describe("storyteller-deliver-info", () => {
+  test("records night info for a player during first-night", () => {
+    const players = [
+      makePlayer({ id: "p1", seatIndex: 0 }),
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 1,
+      }),
+    ];
+    const s = firstNightState(players);
+    const next = dispatch(s, {
+      type: "storyteller-deliver-info",
+      playerId: "p1",
+      info: "You neighbour 0 evil players.",
+    });
+    expect(next.nightInfo["p1"]).toBe("You neighbour 0 evil players.");
+  });
+
+  test("throws when called outside a night phase", () => {
+    const players = [
+      makePlayer({ id: "p1", seatIndex: 0 }),
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 1,
+      }),
+    ];
+    const s = dayState(players);
+    expect(() =>
+      dispatch(s, {
+        type: "storyteller-deliver-info",
+        playerId: "p1",
+        info: "some info",
+      }),
+    ).toThrow(/night phase/);
+  });
+});
+
+describe("execute — throws outside day phase", () => {
+  test("execute in night phase throws", () => {
+    const players = [
+      makePlayer({ id: "p1", seatIndex: 0 }),
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 1,
+      }),
+    ];
+    const s = firstNightState(players);
+    expect(() => dispatch(s, { type: "execute", targetId: "p1" })).toThrow(
+      /day/,
+    );
+  });
+});
+
+describe("vote — ineligible voter", () => {
+  test("throws when player is not in the eligibleVoterIds list", () => {
+    const players = [
+      makePlayer({ id: "p1", seatIndex: 0 }),
+      makePlayer({ id: "p2", seatIndex: 1 }),
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 2,
+      }),
+    ];
+    let s = dayState(players);
+    s = dispatch(s, { type: "nominate", nominatorId: "p1", targetId: "p2" });
+    // "imp" votes first; p2 (target) votes last
+    const firstVoterId = s.voting!.eligibleVoterIds[0];
+    s = dispatch(s, { type: "vote", playerId: firstVoterId, vote: false });
+    // Attempt to vote with a non-existent player
+    expect(() =>
+      dispatch(s, { type: "vote", playerId: "nobody", vote: true }),
+    ).toThrow(/not eligible/);
+  });
+});
+
+describe("slayer-shoot — additional validation", () => {
+  test("throws when the acting player is not the Slayer", () => {
+    const players = [
+      makePlayer({ id: "notslayer", trueCharacter: "empath", seatIndex: 0 }),
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 1,
+      }),
+      makePlayer({ id: "p1", seatIndex: 2 }),
+    ];
+    const s = dayState(players);
+    expect(() =>
+      dispatch(s, {
+        type: "slayer-shoot",
+        slayerId: "notslayer",
+        targetId: "p1",
+      }),
+    ).toThrow(/not the Slayer/);
+  });
+
+  test("throws when Slayer targets themselves", () => {
+    const players = [
+      makePlayer({ id: "slayer", trueCharacter: "slayer", seatIndex: 0 }),
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 1,
+      }),
+      makePlayer({ id: "p1", seatIndex: 2 }),
+    ];
+    const s = dayState(players);
+    expect(() =>
+      dispatch(s, {
+        type: "slayer-shoot",
+        slayerId: "slayer",
+        targetId: "slayer",
+      }),
+    ).toThrow(/cannot target themselves/);
+  });
+});
+
+describe("night-choice — Butler with empty targetIds clears master", () => {
+  test("Butler submitting empty targetIds sets butlerMaster to null", () => {
+    const players = [
+      makePlayer({
+        id: "butler",
+        trueCharacter: "butler",
+        alignment: "Outsider",
+        seatIndex: 0,
+      }),
+      makePlayer({ id: "master", seatIndex: 1 }),
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 2,
+      }),
+    ];
+    let s = firstNightState(players);
+    // First set a master
+    s = dispatch(s, {
+      type: "night-choice",
+      playerId: "butler",
+      targetIds: ["master"],
+    });
+    expect(s.grimoire.butlerMaster).toBe("master");
+    // Then submit empty targetIds to clear it
+    s = dispatch(s, {
+      type: "night-choice",
+      playerId: "butler",
+      targetIds: [],
+    });
+    expect(s.grimoire.butlerMaster).toBeNull();
   });
 });
 

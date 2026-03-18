@@ -291,6 +291,46 @@ export function calcEmpathNumber(
 }
 
 // ============================================================
+// Fortune Teller result calculation
+// ============================================================
+
+/**
+ * Calculate the Fortune Teller's nightly result.
+ *
+ * Returns true (nod) if either chosen target is the Demon or the permanent
+ * red-herring player, false (shake) otherwise.
+ *
+ * Rules:
+ * - Spy may register as a Townsfolk or Outsider (good) — so a Spy can produce
+ *   a false negative. This is Storyteller-discretionary per-check. This helper
+ *   returns the *true* result; the Storyteller may override for a Spy target.
+ * - Recluse may register as evil/Demon — similarly Storyteller-discretionary.
+ *   The helper returns the true result; the Storyteller may override.
+ * - A poisoned or drunk Fortune Teller may receive false info — the Storyteller
+ *   shows this player whatever info they choose. This helper returns the correct
+ *   answer; callers must ignore it when the FT is poisoned/drunk.
+ *
+ * @param grimoire  Current grimoire (contains red herring assignment)
+ * @param target1Id First player chosen by the Fortune Teller
+ * @param target2Id Second player chosen by the Fortune Teller
+ * @returns true = nod (at least one is Demon or red herring); false = shake head
+ */
+export function calcFortuneTellerResult(
+  grimoire: Grimoire,
+  target1Id: PlayerId,
+  target2Id: PlayerId,
+): boolean {
+  const t1 = grimoire.players.find((p) => p.id === target1Id);
+  const t2 = grimoire.players.find((p) => p.id === target2Id);
+
+  const isDemon = (p: Player | undefined) => p?.alignment === "Demon";
+  const isRedHerring = (p: Player | undefined) =>
+    p !== undefined && p.id === grimoire.fortuneTellerRedHerring;
+
+  return isDemon(t1) || isDemon(t2) || isRedHerring(t1) || isRedHerring(t2);
+}
+
+// ============================================================
 // Scarlet Woman activation
 // ============================================================
 

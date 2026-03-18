@@ -152,6 +152,25 @@ function handleResolveNight(state: GameState): GameState {
     }
 
     if (isSelfKill) {
+      // Check whether the Monk has protected the Imp this night.
+      // If a healthy Monk protected the Imp, the self-kill is blocked entirely:
+      // the Imp stays alive and no Demon transfer occurs.
+      const monkPlayerForSelfKill = getPlayerByCharacter(grimoire, "monk");
+      const monkEffectiveForSelfKill =
+        monkPlayerForSelfKill !== undefined &&
+        monkPlayerForSelfKill.isAlive &&
+        !monkPlayerForSelfKill.isPoisoned &&
+        !monkPlayerForSelfKill.isDrunk;
+      const impIsProtected =
+        impPlayer !== undefined &&
+        impPlayer.isProtected &&
+        monkEffectiveForSelfKill;
+
+      if (impIsProtected) {
+        // Self-kill blocked — Imp survives, no transfer
+        return finaliseNightResolution(currentState);
+      }
+
       // Imp self-kill: try Scarlet Woman first
       const {
         grimoire: swGrimoire,
