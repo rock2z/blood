@@ -79,7 +79,16 @@
       "demon_info": "Demon Info",
       "demon_info_desc": "The Demon (Imp) wakes. Show them who the Minions are. Provide 3 good-character bluff tokens not in play. Put them to sleep.",
       "demon_info_skip": "Demon Info (skipped)",
-      "demon_info_skip_desc": "Fewer than 7 players: The Demon does not learn the Minions. Storyteller shakes head."
+      "demon_info_skip_desc": "Fewer than 7 players: The Demon does not learn the Minions. Storyteller shakes head.",
+      "minions_label": "Minions:",
+      "demon_label": "Demon:",
+      "send_to_minions": "Send to all Minions",
+      "resend_to_minions": "Resend to Minions",
+      "minion_info_msg": "Fellow Minions: {{minions}}. The Demon: {{demon}}",
+      "send_to_demon": "Send to Demon",
+      "bluffs_label": "Bluff tokens (select 3 good characters not in play):",
+      "demon_info_msg": "Minions: {{minions}}. Your bluffs: {{bluffs}}",
+      "sent": "✓ Sent"
     },
     "actions": {
       "washerwoman": "Wake the Washerwoman. Show two players (one is the named Townsfolk). Show that Townsfolk token.",
