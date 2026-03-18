@@ -21,6 +21,8 @@ import {
   getFirstNightPreSteps,
   TROUBLE_BREWING_CHARACTERS,
   TB_BY_ALIGNMENT,
+  calcChefNumber,
+  calcEmpathNumber,
 } from "@botc/engine";
 import { SendFn } from "../useGame";
 
@@ -759,18 +761,6 @@ function NightOrderPanel({
   );
 }
 
-/** Characters that receive information from the Storyteller each night */
-const INFO_DELIVERY_CHARS = new Set<CharacterId>([
-  "washerwoman",
-  "librarian",
-  "investigator",
-  "chef",
-  "empath",
-  "fortuneteller",
-  "butler",
-  "undertaker",
-]);
-
 function NightStepCard({
   stepKey,
   step,
@@ -791,27 +781,12 @@ function NightStepCard({
   const { t } = useTranslation();
   const alivePlayers = state.grimoire.players.filter((p) => p.isAlive);
   const [target1, setTarget1] = useState(alivePlayers[0]?.id ?? "");
-  const [target2, setTarget2] = useState(alivePlayers[1]?.id ?? "");
-  const [infoText, setInfoText] = useState("");
-  const [infoSent, setInfoSent] = useState(false);
-
-  const handleSendInfo = () => {
-    dispatch({
-      type: "storyteller-deliver-info",
-      playerId: step.player.id,
-      info: infoText,
-    });
-    setInfoSent(true);
-    setInfoText("");
-  };
 
   const handleDispatch = () => {
-    const targetIds =
-      step.character === "fortuneteller" ? [target1, target2] : [target1];
     dispatch({
       type: "night-choice",
       playerId: step.player.id,
-      targetIds,
+      targetIds: [target1],
     });
     toggleDone(stepKey);
   };
@@ -857,7 +832,6 @@ function NightStepCard({
           >
             {alivePlayers
               .filter((p) =>
-                // Monk and Butler cannot target themselves
                 step.character === "monk" || step.character === "butler"
                   ? p.id !== step.player.id
                   : true,
@@ -868,61 +842,103 @@ function NightStepCard({
                 </option>
               ))}
           </select>
-          {step.character === "fortuneteller" && (
-            <select
-              value={target2}
-              onChange={(e) => setTarget2(e.target.value)}
-              className="form-select"
-            >
-              {alivePlayers.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          )}
           <button onClick={handleDispatch} className="btn-primary btn-sm">
             {t("night.confirm_choice")}
           </button>
         </div>
       )}
 
-      {/* Fortune Teller answer: pick 2 players, auto-calculate yes/no */}
-      {step.character === "fortuneteller" && !done && (
-        <FortuneTellerHelper
+      {/* Character-specific structured info helpers */}
+      {(step.character === "washerwoman" ||
+        step.character === "librarian" ||
+        step.character === "investigator") &&
+        !done && (
+          <TwoPlayerCharInfoHelper
+            character={step.character}
+            player={step.player}
+            state={state}
+            dispatch={dispatch}
+          />
+        )}
+      {step.character === "chef" && !done && (
+        <ChefInfoHelper
+          player={step.player}
           state={state}
+          dispatch={dispatch}
+        />
+      )}
+      {step.character === "empath" && !done && (
+        <EmpathInfoHelper
+          player={step.player}
+          state={state}
+          dispatch={dispatch}
+        />
+      )}
+      {step.character === "fortuneteller" && !done && (
+        <FortuneTellerInfoHelper
+          player={step.player}
+          state={state}
+          dispatch={dispatch}
           toggleDone={() => toggleDone(stepKey)}
         />
       )}
+      {step.character === "undertaker" && !done && (
+        <UndertakerInfoHelper
+          player={step.player}
+          state={state}
+          dispatch={dispatch}
+        />
+      )}
+      {step.character === "butler" && !done && (
+        <ButlerConfirmInfoHelper
+          player={step.player}
+          state={state}
+          dispatch={dispatch}
+        />
+      )}
+    </div>
+  );
+}
 
-      {/* Info delivery: send the Storyteller-composed info string to the player */}
-      {INFO_DELIVERY_CHARS.has(step.character) && (
-        <div className="ml-6 mt-2 p-3 bg-yellow-950/30 border border-yellow-700/50 rounded-lg">
-          <div className="text-xs font-semibold text-yellow-400 mb-2">
-            {t("night.send_info_to", { name: step.player.name })}
-          </div>
-          {infoSent ? (
-            <div className="text-xs text-emerald-400">
-              {t("night.info_sent", { name: step.player.name })}
-            </div>
-          ) : (
-            <div className="flex gap-2 items-center">
-              <input
-                type="text"
-                value={infoText}
-                onChange={(e) => setInfoText(e.target.value)}
-                placeholder={t("night.compose_info")}
-                className="form-input-sm flex-1"
-              />
-              <button
-                onClick={handleSendInfo}
-                disabled={infoText.trim() === ""}
-                className="btn-warning btn-sm"
-              >
-                {t("night.send")}
-              </button>
-            </div>
-          )}
+// ============================================================
+// Shared info-delivery wrapper
+// ============================================================
+
+function InfoDeliveryBox({
+  playerName,
+  preview,
+  onSend,
+  sent,
+  disabled,
+}: {
+  playerName: string;
+  preview: string;
+  onSend: () => void;
+  sent: boolean;
+  disabled?: boolean;
+}): React.ReactElement {
+  const { t } = useTranslation();
+  return (
+    <div className="ml-6 mt-2 p-3 bg-yellow-950/30 border border-yellow-700/50 rounded-lg">
+      <div className="text-xs font-semibold text-yellow-400 mb-2">
+        {t("night.send_info_to", { name: playerName })}
+      </div>
+      {sent ? (
+        <div className="text-xs text-emerald-400">
+          {t("night.info_sent", { name: playerName })}
+        </div>
+      ) : (
+        <div className="flex gap-2 items-center flex-wrap">
+          <span className="text-xs text-slate-300 bg-slate-800 px-2 py-1 rounded font-mono flex-1">
+            {preview}
+          </span>
+          <button
+            onClick={onSend}
+            disabled={disabled}
+            className="btn-warning btn-sm"
+          >
+            {t("night.send")}
+          </button>
         </div>
       )}
     </div>
@@ -930,20 +946,256 @@ function NightStepCard({
 }
 
 // ============================================================
-// Fortune Teller helper — pick 2 players, auto-show YES/NO answer
+// Washerwoman / Librarian / Investigator — pick 2 players + 1 character
 // ============================================================
 
-function FortuneTellerHelper({
+function TwoPlayerCharInfoHelper({
+  character,
+  player,
   state,
+  dispatch,
+}: {
+  character: "washerwoman" | "librarian" | "investigator";
+  player: Player;
+  state: GameState;
+  dispatch: (a: Action) => void;
+}): React.ReactElement {
+  const { t } = useTranslation();
+  const allPlayers = state.grimoire.players;
+
+  const alignmentChars =
+    character === "washerwoman"
+      ? TB_BY_ALIGNMENT.townsfolk
+      : character === "librarian"
+        ? TB_BY_ALIGNMENT.outsiders
+        : TB_BY_ALIGNMENT.minions;
+
+  const [p1, setP1] = useState(allPlayers[0]?.id ?? "");
+  const [p2, setP2] = useState(allPlayers[1]?.id ?? "");
+  const [charId, setCharId] = useState<CharacterId>(
+    alignmentChars[0] as CharacterId,
+  );
+  const [noOutsiders, setNoOutsiders] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const p1Name = allPlayers.find((p) => p.id === p1)?.name ?? p1;
+  const p2Name = allPlayers.find((p) => p.id === p2)?.name ?? p2;
+  const charName = t(`characters.${charId}`, {
+    defaultValue: TROUBLE_BREWING_CHARACTERS[charId]?.name ?? charId,
+  });
+
+  const preview =
+    character === "librarian" && noOutsiders
+      ? t("night.info_no_outsiders")
+      : `${t("night.info_one_of")} ${p1Name} & ${p2Name} ${t("night.info_is_the")} ${charName}`;
+
+  const handleSend = () => {
+    dispatch({
+      type: "storyteller-deliver-info",
+      playerId: player.id,
+      info: preview,
+    });
+    setSent(true);
+  };
+
+  return (
+    <>
+      {!(character === "librarian" && noOutsiders) && (
+        <div className="ml-6 mt-2 flex gap-2 flex-wrap items-center">
+          <select
+            value={p1}
+            onChange={(e) => setP1(e.target.value)}
+            className="form-select"
+          >
+            {allPlayers.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <span className="text-slate-500 text-xs">&amp;</span>
+          <select
+            value={p2}
+            onChange={(e) => setP2(e.target.value)}
+            className="form-select"
+          >
+            {allPlayers.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={charId}
+            onChange={(e) => setCharId(e.target.value as CharacterId)}
+            className="form-select"
+          >
+            {alignmentChars.map((id) => (
+              <option key={id} value={id}>
+                {t(`characters.${id}`, {
+                  defaultValue: TROUBLE_BREWING_CHARACTERS[id]?.name ?? id,
+                })}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      {character === "librarian" && (
+        <div className="ml-6 mt-1 flex items-center gap-2">
+          <input
+            type="checkbox"
+            id={`no-outsiders-${player.id}`}
+            checked={noOutsiders}
+            onChange={(e) => setNoOutsiders(e.target.checked)}
+            className="accent-indigo-500 w-4 h-4"
+          />
+          <label
+            htmlFor={`no-outsiders-${player.id}`}
+            className="text-xs text-slate-400 cursor-pointer"
+          >
+            {t("night.info_no_outsiders_label")}
+          </label>
+        </div>
+      )}
+      <InfoDeliveryBox
+        playerName={player.name}
+        preview={preview}
+        onSend={handleSend}
+        sent={sent}
+      />
+    </>
+  );
+}
+
+// ============================================================
+// Chef — auto-calculate adjacent evil pairs, allow override
+// ============================================================
+
+function ChefInfoHelper({
+  player,
+  state,
+  dispatch,
+}: {
+  player: Player;
+  state: GameState;
+  dispatch: (a: Action) => void;
+}): React.ReactElement {
+  const { t } = useTranslation();
+  const calculated = calcChefNumber(state.grimoire);
+  const [count, setCount] = useState(calculated);
+  const [sent, setSent] = useState(false);
+
+  const preview = String(count);
+
+  const handleSend = () => {
+    dispatch({
+      type: "storyteller-deliver-info",
+      playerId: player.id,
+      info: preview,
+    });
+    setSent(true);
+  };
+
+  return (
+    <>
+      <div className="ml-6 mt-2 flex gap-2 items-center">
+        <span className="text-xs text-slate-400">
+          {t("night.info_calculated", { n: calculated })}
+        </span>
+        <input
+          type="number"
+          min={0}
+          value={count}
+          onChange={(e) => setCount(Math.max(0, Number(e.target.value)))}
+          className="form-input-sm w-16"
+        />
+      </div>
+      <InfoDeliveryBox
+        playerName={player.name}
+        preview={preview}
+        onSend={handleSend}
+        sent={sent}
+      />
+    </>
+  );
+}
+
+// ============================================================
+// Empath — auto-calculate evil living neighbours, allow override
+// ============================================================
+
+function EmpathInfoHelper({
+  player,
+  state,
+  dispatch,
+}: {
+  player: Player;
+  state: GameState;
+  dispatch: (a: Action) => void;
+}): React.ReactElement {
+  const { t } = useTranslation();
+  const calculated = calcEmpathNumber(state.grimoire, player.id);
+  const [count, setCount] = useState(calculated);
+  const [sent, setSent] = useState(false);
+
+  const preview = String(count);
+
+  const handleSend = () => {
+    dispatch({
+      type: "storyteller-deliver-info",
+      playerId: player.id,
+      info: preview,
+    });
+    setSent(true);
+  };
+
+  return (
+    <>
+      <div className="ml-6 mt-2 flex gap-2 items-center">
+        <span className="text-xs text-slate-400">
+          {t("night.info_calculated", { n: calculated })}
+        </span>
+        <input
+          type="number"
+          min={0}
+          max={2}
+          value={count}
+          onChange={(e) =>
+            setCount(Math.min(2, Math.max(0, Number(e.target.value))))
+          }
+          className="form-input-sm w-16"
+        />
+      </div>
+      <InfoDeliveryBox
+        playerName={player.name}
+        preview={preview}
+        onSend={handleSend}
+        sent={sent}
+      />
+    </>
+  );
+}
+
+// ============================================================
+// Fortune Teller — pick 2 players, auto-show YES/NO, send on confirm
+// ============================================================
+
+function FortuneTellerInfoHelper({
+  player,
+  state,
+  dispatch,
   toggleDone,
 }: {
+  player: Player;
   state: GameState;
+  dispatch: (a: Action) => void;
   toggleDone: () => void;
 }): React.ReactElement {
   const { t } = useTranslation();
   const allPlayers = state.grimoire.players;
   const [pick1, setPick1] = useState(allPlayers[0]?.id ?? "");
   const [pick2, setPick2] = useState(allPlayers[1]?.id ?? "");
+  const [sent, setSent] = useState(false);
 
   const redHerring = state.grimoire.fortuneTellerRedHerring;
   const isYes = [pick1, pick2].some((id) => {
@@ -951,55 +1203,190 @@ function FortuneTellerHelper({
     return p?.trueCharacter === "imp" || p?.id === redHerring;
   });
 
+  const answer = isYes ? t("night.yes") : t("night.no");
+
+  const handleSend = () => {
+    dispatch({
+      type: "storyteller-deliver-info",
+      playerId: player.id,
+      info: answer,
+    });
+    setSent(true);
+    toggleDone();
+  };
+
   return (
     <div className="ml-6 mt-2 p-3 bg-blue-950/30 border border-blue-700/50 rounded-lg">
       <div className="text-xs font-semibold text-blue-400 mb-2">
         {t("night.ft_checks_2")}
       </div>
-      <div className="flex gap-2 flex-wrap items-center">
-        <select
-          value={pick1}
-          onChange={(e) => setPick1(e.target.value)}
-          className="form-select"
-        >
-          {allPlayers.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-        <span className="text-slate-500 text-sm">&amp;</span>
-        <select
-          value={pick2}
-          onChange={(e) => setPick2(e.target.value)}
-          className="form-select"
-        >
-          {allPlayers.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-        <span
-          className={cx(
-            "text-sm font-bold px-3 py-1 rounded-lg",
-            isYes
-              ? "bg-emerald-900/50 text-emerald-400 border border-emerald-700"
-              : "bg-red-900/50 text-red-400 border border-red-700",
-          )}
-        >
-          {t("night.ft_answer", {
-            answer: isYes ? t("night.yes") : t("night.no"),
-          })}
-        </span>
-        <button onClick={toggleDone} className="btn-default btn-sm">
-          {t("night.done")}
-        </button>
-      </div>
-      <div className="text-xs text-slate-500 mt-2">
-        {t("night.ft_red_herring", { herring: redHerring ?? "—" })}
-      </div>
+      {sent ? (
+        <div className="text-xs text-emerald-400">
+          {t("night.info_sent", { name: player.name })}
+        </div>
+      ) : (
+        <>
+          <div className="flex gap-2 flex-wrap items-center">
+            <select
+              value={pick1}
+              onChange={(e) => setPick1(e.target.value)}
+              className="form-select"
+            >
+              {allPlayers.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            <span className="text-slate-500 text-sm">&amp;</span>
+            <select
+              value={pick2}
+              onChange={(e) => setPick2(e.target.value)}
+              className="form-select"
+            >
+              {allPlayers.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            <span
+              className={cx(
+                "text-sm font-bold px-3 py-1 rounded-lg",
+                isYes
+                  ? "bg-emerald-900/50 text-emerald-400 border border-emerald-700"
+                  : "bg-red-900/50 text-red-400 border border-red-700",
+              )}
+            >
+              {t("night.ft_answer", { answer })}
+            </span>
+            <button onClick={handleSend} className="btn-warning btn-sm">
+              {t("night.send")}
+            </button>
+          </div>
+          <div className="text-xs text-slate-500 mt-2">
+            {t("night.ft_red_herring", { herring: redHerring ?? "—" })}
+          </div>
+        </>
+      )}
     </div>
+  );
+}
+
+// ============================================================
+// Undertaker — auto-fill from executedToday, allow override
+// ============================================================
+
+function UndertakerInfoHelper({
+  player,
+  state,
+  dispatch,
+}: {
+  player: Player;
+  state: GameState;
+  dispatch: (a: Action) => void;
+}): React.ReactElement {
+  const { t } = useTranslation();
+  const allCharIds = Object.keys(TROUBLE_BREWING_CHARACTERS) as CharacterId[];
+  const defaultChar =
+    state.grimoire.executedToday ?? (allCharIds[0] as CharacterId);
+  const [charId, setCharId] = useState<CharacterId>(defaultChar);
+  const [sent, setSent] = useState(false);
+
+  const charName = t(`characters.${charId}`, {
+    defaultValue: TROUBLE_BREWING_CHARACTERS[charId]?.name ?? charId,
+  });
+
+  const handleSend = () => {
+    dispatch({
+      type: "storyteller-deliver-info",
+      playerId: player.id,
+      info: charName,
+    });
+    setSent(true);
+  };
+
+  if (!state.grimoire.executedToday) {
+    return (
+      <div className="ml-6 mt-2 text-xs text-slate-500 italic">
+        {t("night.undertaker_no_execution")}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="ml-6 mt-2 flex gap-2 items-center">
+        <span className="text-xs text-slate-400">
+          {t("night.undertaker_executed")}
+        </span>
+        <select
+          value={charId}
+          onChange={(e) => setCharId(e.target.value as CharacterId)}
+          className="form-select"
+        >
+          {allCharIds.map((id) => (
+            <option key={id} value={id}>
+              {t(`characters.${id}`, {
+                defaultValue: TROUBLE_BREWING_CHARACTERS[id]?.name ?? id,
+              })}
+            </option>
+          ))}
+        </select>
+      </div>
+      <InfoDeliveryBox
+        playerName={player.name}
+        preview={charName}
+        onSend={handleSend}
+        sent={sent}
+      />
+    </>
+  );
+}
+
+// ============================================================
+// Butler — confirm master after night-choice dispatch
+// ============================================================
+
+function ButlerConfirmInfoHelper({
+  player,
+  state,
+  dispatch,
+}: {
+  player: Player;
+  state: GameState;
+  dispatch: (a: Action) => void;
+}): React.ReactElement {
+  const { t } = useTranslation();
+  const [sent, setSent] = useState(false);
+
+  const masterName =
+    state.grimoire.butlerMaster != null
+      ? (state.grimoire.players.find(
+          (p) => p.id === state.grimoire.butlerMaster,
+        )?.name ?? state.grimoire.butlerMaster)
+      : null;
+
+  if (!masterName) return <></>;
+
+  const preview = t("night.butler_master_is", { name: masterName });
+
+  const handleSend = () => {
+    dispatch({
+      type: "storyteller-deliver-info",
+      playerId: player.id,
+      info: preview,
+    });
+    setSent(true);
+  };
+
+  return (
+    <InfoDeliveryBox
+      playerName={player.name}
+      preview={preview}
+      onSend={handleSend}
+      sent={sent}
+    />
   );
 }
 

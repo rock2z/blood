@@ -237,6 +237,60 @@ export function executePlayer(
 }
 
 // ============================================================
+// Night-info calculation helpers
+// ============================================================
+
+/**
+ * Calculate the Chef number: how many adjacent pairs of evil players exist
+ * in the seating circle (including the wrap-around pair).
+ */
+export function calcChefNumber(grimoire: Grimoire): number {
+  const players = [...grimoire.players].sort(
+    (a, b) => a.seatIndex - b.seatIndex,
+  );
+  const n = players.length;
+  const isEvil = (p: Player) =>
+    p.alignment === "Minion" || p.alignment === "Demon";
+  let count = 0;
+  for (let i = 0; i < n; i++) {
+    const a = players[i];
+    const b = players[(i + 1) % n];
+    if (isEvil(a) && isEvil(b)) count++;
+  }
+  return count;
+}
+
+/**
+ * Calculate the Empath number: how many of the Empath's two living neighbours
+ * (left and right in seat order, skipping dead players) are evil.
+ */
+export function calcEmpathNumber(
+  grimoire: Grimoire,
+  playerId: PlayerId,
+): number {
+  const players = [...grimoire.players].sort(
+    (a, b) => a.seatIndex - b.seatIndex,
+  );
+  const n = players.length;
+  const idx = players.findIndex((p) => p.id === playerId);
+  if (idx === -1) return 0;
+
+  const findLivingNeighbor = (dir: 1 | -1): Player | undefined => {
+    for (let i = 1; i < n; i++) {
+      const neighbor = players[(idx + dir * i + n) % n];
+      if (neighbor.isAlive) return neighbor;
+    }
+    return undefined;
+  };
+
+  const left = findLivingNeighbor(-1);
+  const right = findLivingNeighbor(1);
+  const isEvil = (p: Player) =>
+    p.alignment === "Minion" || p.alignment === "Demon";
+  return (left && isEvil(left) ? 1 : 0) + (right && isEvil(right) ? 1 : 0);
+}
+
+// ============================================================
 // Scarlet Woman activation
 // ============================================================
 
