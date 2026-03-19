@@ -280,3 +280,64 @@ describe("getEachNightOrder — Drunk uses perceivedCharacter position", () => {
     expect(steps.some((s) => s.character === "drunk")).toBe(false);
   });
 });
+
+// ============================================================
+// Poisoned / drunk flags propagate into night-order step.player
+// (the UI badge reads step.player.isPoisoned / isDrunk)
+// ============================================================
+
+describe("night step player flags — poisoned / drunk", () => {
+  test("poisoned Monk step carries isPoisoned=true", () => {
+    const players = [
+      { ...makePlayer({ id: "p1", trueCharacter: "monk" }), isPoisoned: true },
+      makePlayer({ id: "p2", trueCharacter: "imp", alignment: "Demon" }),
+    ];
+    const g = createGrimoire(players);
+    const steps = getEachNightOrder(g, false);
+    const monk = steps.find((s) => s.character === "monk");
+    expect(monk).toBeDefined();
+    expect(monk!.player.isPoisoned).toBe(true);
+    expect(monk!.player.isDrunk).toBe(false);
+  });
+
+  test("drunk Empath step carries isDrunk=true", () => {
+    const players = [
+      { ...makePlayer({ id: "p1", trueCharacter: "empath" }), isDrunk: true },
+      makePlayer({ id: "p2", trueCharacter: "imp", alignment: "Demon" }),
+    ];
+    const g = createGrimoire(players);
+    const steps = getEachNightOrder(g, false);
+    const empath = steps.find((s) => s.character === "empath");
+    expect(empath).toBeDefined();
+    expect(empath!.player.isDrunk).toBe(true);
+    expect(empath!.player.isPoisoned).toBe(false);
+  });
+
+  test("player with both flags set — both are visible on the step", () => {
+    const players = [
+      {
+        ...makePlayer({ id: "p1", trueCharacter: "fortuneteller" }),
+        isPoisoned: true,
+        isDrunk: true,
+      },
+      makePlayer({ id: "p2", trueCharacter: "imp", alignment: "Demon" }),
+    ];
+    const g = createGrimoire(players);
+    const steps = getEachNightOrder(g, false);
+    const ft = steps.find((s) => s.character === "fortuneteller");
+    expect(ft!.player.isPoisoned).toBe(true);
+    expect(ft!.player.isDrunk).toBe(true);
+  });
+
+  test("healthy player has both flags false", () => {
+    const players = [
+      makePlayer({ id: "p1", trueCharacter: "undertaker" }),
+      makePlayer({ id: "p2", trueCharacter: "imp", alignment: "Demon" }),
+    ];
+    const g = createGrimoire(players);
+    const steps = getEachNightOrder(g, false);
+    const ut = steps.find((s) => s.character === "undertaker");
+    expect(ut!.player.isPoisoned).toBe(false);
+    expect(ut!.player.isDrunk).toBe(false);
+  });
+});
