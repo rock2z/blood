@@ -68,6 +68,8 @@
     "info_no_outsiders": "场上没有外来者",
     "info_no_outsiders_label": "场上没有外来者",
     "info_calculated": "自动计算：{{n}} — 覆盖：",
+    "poisoned_warning": "☠ 中毒 — 能力可能失效；可以提供错误信息",
+    "drunk_warning": "🍺 醉酒 — 能力可能失效；可以提供错误信息",
     "undertaker_executed": "今日被处决角色：",
     "undertaker_no_execution": "今日无处决——殡仪官不获得信息。",
     "butler_master_is": "今晚你的主人是 {{name}}",
