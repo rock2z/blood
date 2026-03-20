@@ -68,6 +68,8 @@
     "info_no_outsiders": "There are no Outsiders in play",
     "info_no_outsiders_label": "No Outsiders in play",
     "info_calculated": "Auto-calculated: {{n}} — override:",
+    "poisoned_warning": "☠ Poisoned — ability may malfunction; consider giving false info",
+    "drunk_warning": "🍺 Drunk — ability may malfunction; consider giving false info",
     "undertaker_executed": "Executed character:",
     "undertaker_no_execution": "No execution today — Undertaker receives no info.",
     "butler_master_is": "Your master tonight is {{name}}",

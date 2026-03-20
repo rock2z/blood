@@ -845,6 +845,16 @@ function NightStepCard({
           {charName}
         </span>
         <span className="text-slate-500 text-sm">— {step.player.name}</span>
+        {step.player.isPoisoned && (
+          <span className="text-xs bg-red-900/50 text-red-300 px-1.5 py-0.5 rounded">
+            {t("night.poisoned_warning")}
+          </span>
+        )}
+        {!step.player.isPoisoned && step.player.isDrunk && (
+          <span className="text-xs bg-amber-900/50 text-amber-300 px-1.5 py-0.5 rounded">
+            {t("night.drunk_warning")}
+          </span>
+        )}
       </div>
       <div className="text-xs text-slate-400 mb-2 ml-6">{actionText}</div>
 
