@@ -80,7 +80,12 @@ export function PlayerView({
           </div>
         )}
 
-        <NightInfoPanel grimoire={grimoire} phase={phase} />
+        <NightInfoPanel grimoire={grimoire} />
+        {state.pendingMinionPromotion && (
+          <div className="mb-4 p-4 panel-night text-center text-sm text-indigo-300">
+            {t("player.waiting_storyteller")}
+          </div>
+        )}
         <MyCharacterCard grimoire={grimoire} />
         <PlayerList
           players={grimoire.players}
@@ -247,17 +252,12 @@ function ActiveVote({ state }: { state: PlayerSnapshot }): React.ReactElement {
 
 function NightInfoPanel({
   grimoire,
-  phase,
 }: {
   grimoire: PlayerSnapshot["grimoire"];
-  phase: PlayerSnapshot["phase"];
 }): React.ReactElement {
   const { t } = useTranslation();
 
-  if (
-    (phase !== "first-night" && phase !== "night") ||
-    grimoire.myNightInfo === null
-  ) {
+  if (grimoire.myNightInfo === null) {
     return <></>;
   }
   return (

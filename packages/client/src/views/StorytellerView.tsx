@@ -85,10 +85,9 @@ const DEFAULT_NAMES = [
   "Grace",
 ];
 
-function buildRandomBag(names: string[]): CharacterId[] {
+function buildRandomBag(names: string[], baronInPlay: boolean): CharacterId[] {
   const n = names.length;
   if (n < 5 || n > 15) return [];
-  const baronInPlay = false; // Storyteller can toggle later
   return buildTokenBag({ playerCount: n, baronInPlay });
 }
 
@@ -119,11 +118,12 @@ function buildPlayers(names: string[], bag: CharacterId[]): Player[] {
 function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
   const { t } = useTranslation();
   const [names, setNames] = useState<string[]>(DEFAULT_NAMES);
+  const [baronInPlay, setBaronInPlay] = useState(false);
   const [bag, setBag] = useState<CharacterId[]>(() =>
-    buildRandomBag(DEFAULT_NAMES),
+    buildRandomBag(DEFAULT_NAMES, false),
   );
 
-  const reroll = () => setBag(buildRandomBag(names));
+  const reroll = () => setBag(buildRandomBag(names, baronInPlay));
 
   const updateName = (i: number, value: string) => {
     const next = [...names];
@@ -135,7 +135,7 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
     if (names.length < 15) {
       const next = [...names, `Player ${names.length + 1}`];
       setNames(next);
-      setBag(buildRandomBag(next));
+      setBag(buildRandomBag(next, baronInPlay));
     }
   };
 
@@ -143,8 +143,14 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
     if (names.length > 5) {
       const next = names.filter((_, idx) => idx !== i);
       setNames(next);
-      setBag(buildRandomBag(next));
+      setBag(buildRandomBag(next, baronInPlay));
     }
+  };
+
+  const toggleBaron = () => {
+    const next = !baronInPlay;
+    setBaronInPlay(next);
+    setBag(buildRandomBag(names, next));
   };
 
   const handleStart = () => {
@@ -274,6 +280,15 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
         <button onClick={reroll} className="btn-default">
           {t("setup.reroll")}
         </button>
+        <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-slate-300 px-2">
+          <input
+            type="checkbox"
+            checked={baronInPlay}
+            onChange={toggleBaron}
+            className="accent-red-500 w-4 h-4"
+          />
+          {t("setup.baron_in_play")}
+        </label>
         <button
           onClick={handleStart}
           disabled={!valid}

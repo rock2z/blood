@@ -26,7 +26,8 @@
     "add_player": "+ Add Player",
     "reroll": "↺ Re-roll Characters",
     "start_game": "▶ Start Game",
-    "player_count_error": "Trouble Brewing requires 5–15 players."
+    "player_count_error": "Trouble Brewing requires 5–15 players.",
+    "baron_in_play": "Baron in play (+2 Outsiders)"
   },
   "grimoire": {
     "title": "Grimoire",
@@ -177,7 +178,8 @@
     "shoot": "Shoot",
     "ravenkeeper_title": "Ravenkeeper — choose a player to learn their character",
     "choose": "Choose",
-    "dead_suffix": "(dead)"
+    "dead_suffix": "(dead)",
+    "waiting_storyteller": "Waiting for Storyteller…"
   },
   "characters": {
     "washerwoman": "Washerwoman",

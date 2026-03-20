@@ -59,6 +59,8 @@ export interface PlayerSnapshot {
   nominatedToday: GameState["nominatedToday"];
   /** Only true for the Ravenkeeper player when they must submit their choice */
   pendingRavenkeeperChoice: boolean;
+  /** True when night resolution is paused waiting for the Storyteller to choose a Minion */
+  pendingMinionPromotion: boolean;
   grimoire: PlayerGrimoire;
 }
 
@@ -115,6 +117,8 @@ export function filterForPlayer(
     // whether the Ravenkeeper was killed this night before it is announced.
     pendingRavenkeeperChoice:
       state.pendingRavenkeeperChoice && me?.trueCharacter === "ravenkeeper",
+    // All players can see that the game is paused for Storyteller minion choice.
+    pendingMinionPromotion: state.pendingMinionPromotion,
     grimoire: {
       players: publicPlayers,
       myCharacter,
