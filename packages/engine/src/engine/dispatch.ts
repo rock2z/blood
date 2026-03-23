@@ -451,6 +451,21 @@ function handleNightChoice(
     }
   } else if (char === "imp") {
     grimoire = { ...grimoire, impTarget: action.targetIds[0] ?? null };
+  } else if (char === "fortuneteller") {
+    const [t1, t2] = action.targetIds;
+    if (!t1 || !t2) {
+      throw new Error("Fortune Teller must choose exactly 2 players");
+    }
+    if (t1 === t2) {
+      throw new Error("Fortune Teller must choose 2 different players");
+    }
+    // Store the targets so the Storyteller can see the selection and decide
+    // what answer to deliver (they may give false info if the Fortune Teller
+    // is drunk or poisoned).
+    grimoire = {
+      ...grimoire,
+      fortuneTellerTargets: [t1, t2],
+    };
   } else if (char === "butler") {
     const targetId = action.targetIds[0];
     if (targetId) {

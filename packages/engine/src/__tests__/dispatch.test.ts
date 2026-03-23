@@ -2677,3 +2677,132 @@ describe("vote — Butler with no master set", () => {
     expect(s.executionCandidateId).toBe("target");
   });
 });
+
+// ============================================================
+// Fortune Teller — self-select targets
+// ============================================================
+
+describe("Fortune Teller night-choice", () => {
+  function makeFTState() {
+    const players = [
+      makePlayer({
+        id: "ft",
+        trueCharacter: "fortuneteller",
+        alignment: "Townsfolk",
+        seatIndex: 0,
+      }),
+      makePlayer({ id: "p1", seatIndex: 1 }),
+      makePlayer({ id: "p2", seatIndex: 2 }),
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 3,
+      }),
+    ];
+    return firstNightState(players);
+  }
+
+  test("Fortune Teller's night-choice stores targets in grimoire", () => {
+    const s = dispatch(makeFTState(), {
+      type: "night-choice",
+      playerId: "ft",
+      targetIds: ["p1", "p2"],
+    });
+    expect(s.grimoire.fortuneTellerTargets).toEqual(["p1", "p2"]);
+  });
+
+  test("Fortune Teller can include themselves as one of the two targets", () => {
+    const s = dispatch(makeFTState(), {
+      type: "night-choice",
+      playerId: "ft",
+      targetIds: ["ft", "p1"],
+    });
+    expect(s.grimoire.fortuneTellerTargets).toEqual(["ft", "p1"]);
+  });
+
+  test("Fortune Teller targets are cleared at dawn", () => {
+    let s = dispatch(makeFTState(), {
+      type: "night-choice",
+      playerId: "ft",
+      targetIds: ["p1", "p2"],
+    });
+    // Set Imp target so night resolves cleanly
+    s = dispatch(s, {
+      type: "night-choice",
+      playerId: "imp",
+      targetIds: ["p1"],
+    });
+    s = dispatch(s, { type: "resolve-night" });
+    expect(s.grimoire.fortuneTellerTargets).toBeNull();
+  });
+
+  test("throws when fewer than 2 targets are provided", () => {
+    expect(() =>
+      dispatch(makeFTState(), {
+        type: "night-choice",
+        playerId: "ft",
+        targetIds: ["p1"],
+      }),
+    ).toThrow("Fortune Teller must choose exactly 2 players");
+  });
+
+  test("throws when both targets are the same player", () => {
+    expect(() =>
+      dispatch(makeFTState(), {
+        type: "night-choice",
+        playerId: "ft",
+        targetIds: ["p1", "p1"],
+      }),
+    ).toThrow("Fortune Teller must choose 2 different players");
+  });
+
+  test("Storyteller can deliver info after Fortune Teller submits targets", () => {
+    let s = dispatch(makeFTState(), {
+      type: "night-choice",
+      playerId: "ft",
+      targetIds: ["p1", "imp"],
+    });
+    s = dispatch(s, {
+      type: "storyteller-deliver-info",
+      playerId: "ft",
+      info: "yes",
+    });
+    expect(s.nightInfo["ft"]).toBe("yes");
+  });
+
+  test("drunk Fortune Teller targets stored — Storyteller may deliver false info", () => {
+    const players = [
+      makePlayer({
+        id: "ft",
+        trueCharacter: "fortuneteller",
+        alignment: "Townsfolk",
+        isDrunk: true,
+        seatIndex: 0,
+      }),
+      makePlayer({ id: "p1", seatIndex: 1 }),
+      makePlayer({ id: "p2", seatIndex: 2 }),
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 3,
+      }),
+    ];
+    let s = firstNightState(players);
+    s = dispatch(s, {
+      type: "night-choice",
+      playerId: "ft",
+      targetIds: ["p1", "p2"],
+    });
+    // Targets are still stored (engine always accepts the choice)
+    expect(s.grimoire.fortuneTellerTargets).toEqual(["p1", "p2"]);
+    // Storyteller delivers false "yes" even though neither target is Demon/red herring
+    s = dispatch(s, {
+      type: "storyteller-deliver-info",
+      playerId: "ft",
+      info: "yes",
+    });
+    expect(s.nightInfo["ft"]).toBe("yes");
+  });
+});

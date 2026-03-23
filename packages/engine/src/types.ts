@@ -99,6 +99,14 @@ export interface Grimoire {
   mayorRedirectTarget: PlayerId | null;
   /** The Fortune Teller's permanent red-herring player */
   fortuneTellerRedHerring: PlayerId | null;
+  /**
+   * The two players the Fortune Teller chose to check this night.
+   * Set when the Fortune Teller submits their night-choice.
+   * The Storyteller reads this to decide what answer to deliver
+   * (may give false info when the Fortune Teller is drunk or poisoned).
+   * Cleared at dawn alongside other night state.
+   */
+  fortuneTellerTargets: [PlayerId, PlayerId] | null;
   /** The player the Monk chose to protect this night */
   monkProtectionTarget: PlayerId | null;
   /** The player the Poisoner chose to poison this night */
