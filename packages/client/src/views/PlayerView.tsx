@@ -129,6 +129,7 @@ function MyCharacterCard({
   const { myCharacter, myDemonBluffs } = grimoire;
 
   const isEvil = EVIL_CHARACTERS.has(myCharacter);
+  const abilityText = TROUBLE_BREWING_CHARACTERS[myCharacter]?.abilityText;
 
   return (
     <div
@@ -150,6 +151,20 @@ function MyCharacterCard({
         <p className="mt-3 text-xs text-slate-300 leading-snug italic">
           {TROUBLE_BREWING_CHARACTERS[myCharacter].abilityText}
         </p>
+      )}
+
+      {abilityText && (
+        <div
+          className={cx(
+            "mt-4 pt-4 border-t text-sm leading-relaxed",
+            isEvil
+              ? "border-rose-500/20 text-rose-200"
+              : "border-sky-500/20 text-sky-200",
+          )}
+        >
+          <div className="section-label mb-1">{t("player.ability")}</div>
+          <div className="italic">{abilityText}</div>
+        </div>
       )}
 
       {myDemonBluffs && myDemonBluffs.length > 0 && (
