@@ -44,6 +44,7 @@ function makeStorytellerSnapshot(): StorytellerSnapshot {
         impTarget: null,
         mayorRedirectTarget: null,
         fortuneTellerRedHerring: null,
+        fortuneTellerTargets: null,
         monkProtectionTarget: null,
         poisonerTarget: null,
         butlerMaster: null,
