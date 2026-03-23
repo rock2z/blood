@@ -11,7 +11,11 @@
 
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Action, TB_BY_ALIGNMENT } from "@botc/engine";
+import {
+  Action,
+  TB_BY_ALIGNMENT,
+  TROUBLE_BREWING_CHARACTERS,
+} from "@botc/engine";
 import { PlayerSnapshot, PublicPlayer, SendFn } from "../useGame";
 
 // Keep in sync with engine character data by deriving from TB_BY_ALIGNMENT
@@ -125,6 +129,7 @@ function MyCharacterCard({
   const { myCharacter, myDemonBluffs } = grimoire;
 
   const isEvil = EVIL_CHARACTERS.has(myCharacter);
+  const abilityText = TROUBLE_BREWING_CHARACTERS[myCharacter]?.abilityText;
 
   return (
     <div
@@ -142,6 +147,20 @@ function MyCharacterCard({
       <span className={isEvil ? "badge-evil" : "badge-good"}>
         {isEvil ? t("player.evil") : t("player.good")}
       </span>
+
+      {abilityText && (
+        <div
+          className={cx(
+            "mt-4 pt-4 border-t text-sm leading-relaxed",
+            isEvil
+              ? "border-rose-500/20 text-rose-200"
+              : "border-sky-500/20 text-sky-200",
+          )}
+        >
+          <div className="section-label mb-1">{t("player.ability")}</div>
+          <div className="italic">{abilityText}</div>
+        </div>
+      )}
 
       {myDemonBluffs && myDemonBluffs.length > 0 && (
         <div className="mt-4 pt-4 border-t border-rose-500/20">
