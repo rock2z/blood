@@ -70,6 +70,8 @@ export interface PlayerSnapshot {
   pendingRavenkeeperChoice: boolean;
   /** True when night resolution is paused waiting for the Storyteller to choose a Minion */
   pendingMinionPromotion: boolean;
+  /** True for the Imp player when it's a non-first night and they haven't submitted their kill choice yet */
+  pendingImpChoice: boolean;
   grimoire: PlayerGrimoire;
 }
 

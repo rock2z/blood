@@ -55,6 +55,8 @@
     "char_steps_heading": "Character steps:",
     "no_steps": "No character steps this night.",
     "confirm_choice": "Confirm choice",
+    "imp_waiting": "Waiting for Imp player to submit their kill choice…",
+    "imp_chosen": "Imp has chosen: {{name}} — ready to resolve",
     "ft_checks_2": "Fortune Teller checks 2 players",
     "ft_answer": "Answer: {{answer}}",
     "ft_red_herring": "Red herring: {{herring}} | YES if either pick is the Demon or red herring",
@@ -181,7 +183,11 @@
     "ravenkeeper_title": "Ravenkeeper — choose a player to learn their character",
     "choose": "Choose",
     "dead_suffix": "(dead)",
-    "waiting_storyteller": "Waiting for Storyteller…"
+    "waiting_storyteller": "Waiting for Storyteller…",
+    "imp_kill_title": "Imp — choose who to kill tonight",
+    "imp_kill_desc": "Point at any player. Choose yourself to star-pass (transfer Demonhood to a Minion). Choose a dead player to skip the kill.",
+    "imp_self_label": "(you — star-pass)",
+    "imp_confirm": "Confirm kill"
   },
   "characters": {
     "washerwoman": "Washerwoman",
