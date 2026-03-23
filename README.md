@@ -15,7 +15,6 @@ See alignment docs for design context:
 - `alignment/02-architecture.md`
 - `alignment/03-research-summary.md`
 - `alignment/04-tech-decisions.md`
-- `alignment/05-implementation-audit.md`
 
 ## Repository Layout
 
