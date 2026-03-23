@@ -20,6 +20,7 @@ import {
   getEachNightOrder,
   getFirstNightPreSteps,
   TROUBLE_BREWING_CHARACTERS,
+  TROUBLE_BREWING_CHARACTER_IDS,
   TB_BY_ALIGNMENT,
   calcChefNumber,
   calcEmpathNumber,
@@ -145,6 +146,13 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
     setDrunkPerceivedChar(null);
   };
 
+  const setBagEntry = (i: number, charId: CharacterId) => {
+    const next = [...bag];
+    next[i] = charId;
+    setBag(next);
+    if (charId !== "drunk") setDrunkPerceivedChar(null);
+  };
+
   const updateName = (i: number, value: string) => {
     const next = [...names];
     next[i] = value;
@@ -174,6 +182,14 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
     setBaronInPlay(next);
     setBag(buildRandomBag(names, next));
     setDrunkPerceivedChar(null);
+  };
+
+  // Characters available for slot i = all chars not assigned to other slots
+  const availableForSlot = (i: number): CharacterId[] => {
+    const usedByOthers = bag.filter((_, idx) => idx !== i);
+    return (TROUBLE_BREWING_CHARACTER_IDS as CharacterId[]).filter(
+      (id) => !usedByOthers.includes(id),
+    );
   };
 
   const handleStart = () => {
@@ -230,12 +246,9 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
           <tbody>
             {names.map((name, i) => {
               const p = players[i];
-              const charId = p?.trueCharacter;
-              const charName = charId
-                ? t(`characters.${charId}`, { defaultValue: charId })
-                : "—";
               const isEvil =
                 p?.alignment === "Minion" || p?.alignment === "Demon";
+              const slotOptions = valid ? availableForSlot(i) : [];
               return (
                 <tr
                   key={i}
@@ -251,34 +264,47 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
                       className="form-input w-32"
                     />
                   </td>
-                  <td
-                    className={cx(
-                      "px-3 py-2 font-medium",
-                      isEvil ? "text-red-400" : "text-blue-400",
-                    )}
-                  >
-                    {charName}
-                    {p?.isDrunk && (
-                      <span className="ml-2 inline-flex items-center gap-1">
-                        <span className="text-amber-500 text-xs">
-                          {t("setup.drunk_believes_label")}
+                  <td className="px-3 py-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <select
+                        value={bag[i] ?? ""}
+                        onChange={(e) =>
+                          setBagEntry(i, e.target.value as CharacterId)
+                        }
+                        className={cx(
+                          "form-select font-medium",
+                          isEvil ? "text-red-400" : "text-blue-400",
+                        )}
+                      >
+                        {slotOptions.map((id) => (
+                          <option key={id} value={id}>
+                            {t(`characters.${id}`, { defaultValue: id })}
+                          </option>
+                        ))}
+                      </select>
+                      {p?.isDrunk && (
+                        <span className="inline-flex items-center gap-1">
+                          <span className="text-amber-500 text-xs">
+                            {t("setup.drunk_believes_label")}
+                          </span>
+                          <select
+                            value={effectiveDrunkChoice ?? ""}
+                            onChange={(e) =>
+                              setDrunkPerceivedChar(
+                                e.target.value as CharacterId,
+                              )
+                            }
+                            className="form-select text-xs py-0.5 text-amber-300"
+                          >
+                            {availableDrunkChoices.map((id) => (
+                              <option key={id} value={id}>
+                                {t(`characters.${id}`, { defaultValue: id })}
+                              </option>
+                            ))}
+                          </select>
                         </span>
-                        <select
-                          value={effectiveDrunkChoice ?? ""}
-                          onChange={(e) =>
-                            setDrunkPerceivedChar(e.target.value as CharacterId)
-                          }
-                          className="form-select text-xs py-0.5 text-amber-300"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {availableDrunkChoices.map((id) => (
-                            <option key={id} value={id}>
-                              {t(`characters.${id}`, { defaultValue: id })}
-                            </option>
-                          ))}
-                        </select>
-                      </span>
-                    )}
+                      )}
+                    </div>
                   </td>
                   <td
                     className={cx(
