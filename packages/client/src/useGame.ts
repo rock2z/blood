@@ -73,6 +73,8 @@ export interface PlayerSnapshot {
   /** True for the Imp player when it's a non-first night and they haven't submitted their kill choice yet */
   pendingImpChoice: boolean;
   grimoire: PlayerGrimoire;
+  /** Announcements from the previous night shown to all players at the start of each day */
+  dayAnnouncements: string[];
 }
 
 export type StateSnapshot = StorytellerSnapshot | PlayerSnapshot;

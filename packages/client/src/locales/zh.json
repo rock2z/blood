@@ -187,7 +187,10 @@
     "imp_kill_title": "小鬼 — 选择今晚击杀的目标",
     "imp_kill_desc": "指向任意玩家。选择自己可以传位（将恶魔身份传给一名爪牙）。选择已死亡的玩家可跳过本夜击杀。",
     "imp_self_label": "（你自己 — 传位）",
-    "imp_confirm": "确认击杀"
+    "imp_confirm": "确认击杀",
+    "day_announcement_title": "昨夜发生",
+    "alive_title": "存活（{{count}}人）",
+    "no_alive": "无存活玩家"
   },
   "characters": {
     "washerwoman": "洗衣妇",

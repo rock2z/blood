@@ -178,6 +178,12 @@ export interface GameState {
    * Cleared at the start of each new night and at dawn (resolve-night).
    */
   nightInfo: Partial<Record<PlayerId, string>>;
+  /**
+   * Announcements shown to all players at the start of each day.
+   * Populated during night resolution (who died, etc.).
+   * Cleared when the next night begins.
+   */
+  dayAnnouncements: string[];
 }
 
 // ============================================================
