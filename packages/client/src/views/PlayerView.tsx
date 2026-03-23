@@ -105,6 +105,26 @@ export function PlayerView({
             playerId={playerId}
             dispatch={dispatch}
           />
+          <MonkNightPanel
+            state={state}
+            playerId={playerId}
+            dispatch={dispatch}
+          />
+          <PoisonerNightPanel
+            state={state}
+            playerId={playerId}
+            dispatch={dispatch}
+          />
+          <ButlerNightPanel
+            state={state}
+            playerId={playerId}
+            dispatch={dispatch}
+          />
+          <FortuneTellerNightPanel
+            state={state}
+            playerId={playerId}
+            dispatch={dispatch}
+          />
           <VoteButtons state={state} playerId={playerId} dispatch={dispatch} />
           <NominatePanel
             state={state}
@@ -620,6 +640,265 @@ function ImpNightPanel({
           className="btn-danger"
         >
           {t("player.imp_confirm")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Monk night panel — choose a player to protect
+// ============================================================
+
+function MonkNightPanel({
+  state,
+  playerId,
+  dispatch,
+}: {
+  state: PlayerSnapshot;
+  playerId: string | undefined;
+  dispatch: (a: Action) => void;
+}): React.ReactElement {
+  const { t } = useTranslation();
+  const [targetId, setTargetId] = useState<string>("");
+
+  if (!playerId) return <></>;
+  if (!state.pendingMonkChoice) return <></>;
+
+  const targets = state.grimoire.players.filter(
+    (p) => p.isAlive && p.id !== playerId,
+  );
+  const resolvedTarget = targetId || targets[0]?.id;
+
+  return (
+    <div className="p-4 panel-good border-2">
+      <div className="font-semibold text-slate-100 mb-1 text-sm">
+        {t("player.monk_protect_title")}
+      </div>
+      <div className="text-xs text-slate-400 mb-3">
+        {t("player.monk_protect_desc")}
+      </div>
+      <div className="flex gap-2 items-center">
+        <select
+          value={resolvedTarget}
+          onChange={(e) => setTargetId(e.target.value)}
+          className="form-select flex-1"
+        >
+          {targets.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={() =>
+            dispatch({
+              type: "night-choice",
+              playerId,
+              targetIds: [resolvedTarget],
+            })
+          }
+          className="btn-primary"
+        >
+          {t("player.monk_confirm")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Poisoner night panel — choose a player to poison
+// ============================================================
+
+function PoisonerNightPanel({
+  state,
+  playerId,
+  dispatch,
+}: {
+  state: PlayerSnapshot;
+  playerId: string | undefined;
+  dispatch: (a: Action) => void;
+}): React.ReactElement {
+  const { t } = useTranslation();
+  const [targetId, setTargetId] = useState<string>("");
+
+  if (!playerId) return <></>;
+  if (!state.pendingPoisonerChoice) return <></>;
+
+  const targets = state.grimoire.players.filter((p) => p.isAlive);
+  const resolvedTarget = targetId || targets[0]?.id;
+
+  return (
+    <div className="p-4 panel-evil border-2">
+      <div className="font-semibold text-slate-100 mb-1 text-sm">
+        {t("player.poisoner_title")}
+      </div>
+      <div className="text-xs text-slate-400 mb-3">
+        {t("player.poisoner_desc")}
+      </div>
+      <div className="flex gap-2 items-center">
+        <select
+          value={resolvedTarget}
+          onChange={(e) => setTargetId(e.target.value)}
+          className="form-select flex-1"
+        >
+          {targets.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={() =>
+            dispatch({
+              type: "night-choice",
+              playerId,
+              targetIds: [resolvedTarget],
+            })
+          }
+          className="btn-danger"
+        >
+          {t("player.poisoner_confirm")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Butler night panel — choose a master player
+// ============================================================
+
+function ButlerNightPanel({
+  state,
+  playerId,
+  dispatch,
+}: {
+  state: PlayerSnapshot;
+  playerId: string | undefined;
+  dispatch: (a: Action) => void;
+}): React.ReactElement {
+  const { t } = useTranslation();
+  const [targetId, setTargetId] = useState<string>("");
+
+  if (!playerId) return <></>;
+  if (!state.pendingButlerChoice) return <></>;
+
+  const targets = state.grimoire.players.filter(
+    (p) => p.isAlive && p.id !== playerId,
+  );
+  const resolvedTarget = targetId || targets[0]?.id;
+
+  return (
+    <div className="p-4 card border-2 border-purple-500/30">
+      <div className="font-semibold text-slate-100 mb-1 text-sm">
+        {t("player.butler_title")}
+      </div>
+      <div className="text-xs text-slate-400 mb-3">
+        {t("player.butler_desc")}
+      </div>
+      <div className="flex gap-2 items-center">
+        <select
+          value={resolvedTarget}
+          onChange={(e) => setTargetId(e.target.value)}
+          className="form-select flex-1"
+        >
+          {targets.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={() =>
+            dispatch({
+              type: "night-choice",
+              playerId,
+              targetIds: [resolvedTarget],
+            })
+          }
+          className="btn-default"
+        >
+          {t("player.butler_confirm")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Fortune Teller night panel — choose 2 players to check
+// ============================================================
+
+function FortuneTellerNightPanel({
+  state,
+  playerId,
+  dispatch,
+}: {
+  state: PlayerSnapshot;
+  playerId: string | undefined;
+  dispatch: (a: Action) => void;
+}): React.ReactElement {
+  const { t } = useTranslation();
+  const allPlayers = state.grimoire.players.filter((p) => p.isAlive);
+  const [pick1, setPick1] = useState<string>(allPlayers[0]?.id ?? "");
+  const [pick2, setPick2] = useState<string>(allPlayers[1]?.id ?? "");
+
+  if (!playerId) return <></>;
+  if (!state.pendingFortuneTellerChoice) return <></>;
+
+  const resolved1 = pick1 || (allPlayers[0]?.id ?? "");
+  const resolved2 = pick2 || (allPlayers[1]?.id ?? "");
+
+  const canConfirm = resolved1 && resolved2 && resolved1 !== resolved2;
+
+  return (
+    <div className="p-4 panel-good border-2">
+      <div className="font-semibold text-slate-100 mb-1 text-sm">
+        {t("player.ft_title")}
+      </div>
+      <div className="text-xs text-slate-400 mb-3">{t("player.ft_desc")}</div>
+      <div className="flex gap-2 flex-wrap items-center">
+        <select
+          value={resolved1}
+          onChange={(e) => setPick1(e.target.value)}
+          className="form-select flex-1"
+        >
+          {allPlayers
+            .filter((p) => p.id !== resolved2)
+            .map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+        </select>
+        <span className="text-slate-500 text-xs">&amp;</span>
+        <select
+          value={resolved2}
+          onChange={(e) => setPick2(e.target.value)}
+          className="form-select flex-1"
+        >
+          {allPlayers
+            .filter((p) => p.id !== resolved1)
+            .map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+        </select>
+        <button
+          disabled={!canConfirm}
+          onClick={() =>
+            dispatch({
+              type: "night-choice",
+              playerId,
+              targetIds: [resolved1, resolved2],
+            })
+          }
+          className="btn-primary"
+        >
+          {t("player.ft_confirm")}
         </button>
       </div>
     </div>

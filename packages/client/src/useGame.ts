@@ -72,6 +72,14 @@ export interface PlayerSnapshot {
   pendingMinionPromotion: boolean;
   /** True for the Imp player when it's a non-first night and they haven't submitted their kill choice yet */
   pendingImpChoice: boolean;
+  /** True for the Monk player (each-night-except-first) when they haven't submitted their protection choice yet */
+  pendingMonkChoice: boolean;
+  /** True for the Poisoner player when they haven't submitted their poison choice yet */
+  pendingPoisonerChoice: boolean;
+  /** True for the Butler player when they haven't submitted their master choice yet */
+  pendingButlerChoice: boolean;
+  /** True for the Fortune Teller player when they haven't submitted their two targets yet */
+  pendingFortuneTellerChoice: boolean;
   grimoire: PlayerGrimoire;
   /** Announcements from the previous night shown to all players at the start of each day */
   dayAnnouncements: string[];

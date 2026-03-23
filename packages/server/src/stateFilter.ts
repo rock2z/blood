@@ -63,6 +63,14 @@ export interface PlayerSnapshot {
   pendingMinionPromotion: boolean;
   /** True for the Imp player when it's a non-first night and they haven't submitted their kill choice yet */
   pendingImpChoice: boolean;
+  /** True for the Monk player (each-night-except-first) when they haven't submitted their protection choice yet */
+  pendingMonkChoice: boolean;
+  /** True for the Poisoner player when they haven't submitted their poison choice yet */
+  pendingPoisonerChoice: boolean;
+  /** True for the Butler player when they haven't submitted their master choice yet */
+  pendingButlerChoice: boolean;
+  /** True for the Fortune Teller player when they haven't submitted their two targets yet */
+  pendingFortuneTellerChoice: boolean;
   grimoire: PlayerGrimoire;
   /** Announcements from the previous night shown to all players at the start of each day */
   dayAnnouncements: GameState["dayAnnouncements"];
@@ -107,6 +115,9 @@ export function filterForPlayer(
     seatIndex: p.seatIndex,
   }));
 
+  const isNight = state.phase === "first-night" || state.phase === "night";
+  const isEachNight = state.phase === "night";
+
   return {
     role: "player",
     phase: state.phase,
@@ -128,6 +139,30 @@ export function filterForPlayer(
       state.phase === "night" &&
       state.grimoire.impTarget === null &&
       me?.trueCharacter === "imp" &&
+      (me?.isAlive ?? false),
+    // Monk acts each-night-except-first: prompt when no protection target set yet.
+    pendingMonkChoice:
+      isEachNight &&
+      state.grimoire.monkProtectionTarget === null &&
+      me?.trueCharacter === "monk" &&
+      (me?.isAlive ?? false),
+    // Poisoner acts each-night (including first): prompt when no target set yet.
+    pendingPoisonerChoice:
+      isNight &&
+      state.grimoire.poisonerTarget === null &&
+      me?.trueCharacter === "poisoner" &&
+      (me?.isAlive ?? false),
+    // Butler acts each-night (including first): prompt when no master set yet.
+    pendingButlerChoice:
+      isNight &&
+      state.grimoire.butlerMaster === null &&
+      me?.trueCharacter === "butler" &&
+      (me?.isAlive ?? false),
+    // Fortune Teller acts each-night (including first): prompt when targets not yet submitted.
+    pendingFortuneTellerChoice:
+      isNight &&
+      state.grimoire.fortuneTellerTargets === null &&
+      me?.trueCharacter === "fortuneteller" &&
       (me?.isAlive ?? false),
     dayAnnouncements: state.dayAnnouncements,
     grimoire: {
