@@ -101,6 +101,7 @@ function handleAdvanceToNight(state: GameState): GameState {
     nominatorsUsed: [],
     nominatedToday: [],
     nightInfo: {},
+    dayAnnouncements: [],
   };
 }
 
@@ -276,12 +277,37 @@ function handleResolveNight(state: GameState): GameState {
 }
 
 /**
+ * Build the day announcements from log entries added during this night.
+ * Looks for player-died and imp-self-killed events from the current night.
+ */
+function buildDayAnnouncements(state: GameState): string[] {
+  const currentNight = state.day;
+  const currentPhase = state.phase;
+  const nightDeaths = state.log.filter(
+    (e) =>
+      e.night === currentNight &&
+      e.phase === currentPhase &&
+      (e.type === "player-died" || e.type === "imp-self-killed"),
+  );
+  if (nightDeaths.length === 0) {
+    return ["No one died last night."];
+  }
+  return nightDeaths.map((e) => {
+    const targetId = e.payload.targetId as string;
+    const player = state.grimoire.players.find((p) => p.id === targetId);
+    const name = player?.name ?? targetId;
+    return `${name} died.`;
+  });
+}
+
+/**
  * Shared tail: check win condition, clear night state, transition to day.
  * Called after all kills/pending actions are resolved.
  */
 function finaliseNightResolution(state: GameState): GameState {
   const winner = checkWinCondition(state.grimoire);
   const clearedGrimoire = clearNightState(state.grimoire);
+  const dayAnnouncements = buildDayAnnouncements(state);
   return {
     ...state,
     grimoire: clearedGrimoire,
@@ -296,6 +322,7 @@ function finaliseNightResolution(state: GameState): GameState {
     pendingRavenkeeperChoice: false,
     pendingMinionPromotion: false,
     nightInfo: {},
+    dayAnnouncements,
   };
 }
 

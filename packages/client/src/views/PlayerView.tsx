@@ -84,6 +84,7 @@ export function PlayerView({
           </div>
         )}
 
+        <DayAnnouncementsPanel state={state} />
         <NightInfoPanel grimoire={grimoire} />
         {state.pendingMinionPromotion && (
           <div className="mb-4 p-4 panel-night text-center text-sm text-indigo-300">
@@ -91,6 +92,7 @@ export function PlayerView({
           </div>
         )}
         <MyCharacterCard grimoire={grimoire} />
+        <AlivePlayersPanel players={grimoire.players} />
         <PlayerList
           players={grimoire.players}
           executionCandidateId={executionCandidateId}
@@ -271,6 +273,76 @@ function ActiveVote({ state }: { state: PlayerSnapshot }): React.ReactElement {
         {t("player.need_votes", { threshold })} &nbsp;·&nbsp;{" "}
         {t("player.yes_count", { count: yesCount })}
       </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Day announcements panel — shows what happened last night
+// ============================================================
+
+function DayAnnouncementsPanel({
+  state,
+}: {
+  state: PlayerSnapshot;
+}): React.ReactElement {
+  const { t } = useTranslation();
+
+  if (
+    (state.phase !== "day" && state.phase !== "game-over") ||
+    state.dayAnnouncements.length === 0
+  ) {
+    return <></>;
+  }
+
+  return (
+    <div className="mb-4 p-4 rounded-2xl bg-amber-950 ring-1 ring-inset ring-amber-500/30">
+      <div className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">
+        {t("player.day_announcement_title")}
+      </div>
+      <ul className="space-y-1">
+        {state.dayAnnouncements.map((msg, i) => (
+          <li key={i} className="text-slate-200 text-sm leading-relaxed">
+            {msg}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// ============================================================
+// Alive players panel — quick summary of surviving players
+// ============================================================
+
+function AlivePlayersPanel({
+  players,
+}: {
+  players: PublicPlayer[];
+}): React.ReactElement {
+  const { t } = useTranslation();
+
+  const alive = players.filter((p) => p.isAlive);
+
+  return (
+    <div className="mb-4 p-4 rounded-2xl bg-emerald-950 ring-1 ring-inset ring-emerald-500/30">
+      <div className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">
+        {t("player.alive_title", { count: alive.length })}
+      </div>
+      {alive.length === 0 ? (
+        <div className="text-sm text-slate-400">{t("player.no_alive")}</div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {alive.map((p) => (
+            <span
+              key={p.id}
+              className="text-xs font-medium text-emerald-200 bg-emerald-900/60 px-2 py-1 rounded-full ring-1 ring-inset ring-emerald-500/20"
+            >
+              {p.name}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

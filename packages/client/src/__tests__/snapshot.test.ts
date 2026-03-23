@@ -38,6 +38,7 @@ function makeStorytellerSnapshot(): StorytellerSnapshot {
       pendingRavenkeeperChoice: false,
       pendingMinionPromotion: false,
       nightInfo: {},
+      dayAnnouncements: [],
       log: [],
       grimoire: {
         players: [],
@@ -97,6 +98,7 @@ function makePlayerSnapshot(
     pendingMinionPromotion: false,
     pendingImpChoice: false,
     grimoire: makePlayerGrimoire(),
+    dayAnnouncements: [],
     ...overrides,
   };
 }

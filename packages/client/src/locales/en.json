@@ -187,7 +187,10 @@
     "imp_kill_title": "Imp — choose who to kill tonight",
     "imp_kill_desc": "Point at any player. Choose yourself to star-pass (transfer Demonhood to a Minion). Choose a dead player to skip the kill.",
     "imp_self_label": "(you — star-pass)",
-    "imp_confirm": "Confirm kill"
+    "imp_confirm": "Confirm kill",
+    "day_announcement_title": "Last Night",
+    "alive_title": "Alive ({{count}})",
+    "no_alive": "No players alive"
   },
   "characters": {
     "washerwoman": "Washerwoman",
