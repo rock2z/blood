@@ -55,6 +55,8 @@
     "char_steps_heading": "角色步骤：",
     "no_steps": "本夜无角色步骤。",
     "confirm_choice": "确认选择",
+    "imp_waiting": "等待小鬼提交今晚的击杀目标…",
+    "imp_chosen": "小鬼已选择：{{name}} — 可以结算",
     "ft_checks_2": "占卜师查验 2 名玩家",
     "ft_answer": "答案：{{answer}}",
     "ft_red_herring": "诱饵玩家：{{herring}} | 若任一玩家是恶魔或诱饵则回答是",
@@ -181,7 +183,11 @@
     "ravenkeeper_title": "养鸦人 — 选择一名玩家了解其角色",
     "choose": "选择",
     "dead_suffix": "（死亡）",
-    "waiting_storyteller": "等待故事讲述者…"
+    "waiting_storyteller": "等待故事讲述者…",
+    "imp_kill_title": "小鬼 — 选择今晚击杀的目标",
+    "imp_kill_desc": "指向任意玩家。选择自己可以传位（将恶魔身份传给一名爪牙）。选择已死亡的玩家可跳过本夜击杀。",
+    "imp_self_label": "（你自己 — 传位）",
+    "imp_confirm": "确认击杀"
   },
   "characters": {
     "washerwoman": "洗衣妇",

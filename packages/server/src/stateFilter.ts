@@ -61,6 +61,8 @@ export interface PlayerSnapshot {
   pendingRavenkeeperChoice: boolean;
   /** True when night resolution is paused waiting for the Storyteller to choose a Minion */
   pendingMinionPromotion: boolean;
+  /** True for the Imp player when it's a non-first night and they haven't submitted their kill choice yet */
+  pendingImpChoice: boolean;
   grimoire: PlayerGrimoire;
 }
 
@@ -119,6 +121,12 @@ export function filterForPlayer(
       state.pendingRavenkeeperChoice && me?.trueCharacter === "ravenkeeper",
     // All players can see that the game is paused for Storyteller minion choice.
     pendingMinionPromotion: state.pendingMinionPromotion,
+    // Only expose to the Imp player — they need to submit their kill target.
+    pendingImpChoice:
+      state.phase === "night" &&
+      state.grimoire.impTarget === null &&
+      me?.trueCharacter === "imp" &&
+      (me?.isAlive ?? false),
     grimoire: {
       players: publicPlayers,
       myCharacter,

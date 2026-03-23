@@ -653,11 +653,10 @@ function PlayerRow({
 // Night panel — step-by-step night order + discretionary prompts
 // ============================================================
 
-/** Characters that need a night-choice dispatched to the engine */
+/** Characters that need a night-choice dispatched to the engine by the Storyteller */
 const NEEDS_DISPATCH: ReadonlySet<CharacterId> = new Set([
   "monk",
   "poisoner",
-  "imp",
   "butler",
 ]);
 
@@ -1027,6 +1026,12 @@ function NightStepCard({
           player={step.player}
           state={state}
           dispatch={dispatch}
+        />
+      )}
+      {step.character === "imp" && !done && (
+        <ImpChoiceStatusHelper
+          state={state}
+          toggleDone={() => toggleDone(stepKey)}
         />
       )}
     </div>
@@ -1868,6 +1873,45 @@ function ButlerConfirmInfoHelper({
       onSend={handleSend}
       sent={sent}
     />
+  );
+}
+
+// ============================================================
+// Imp — waiting for player to submit kill choice
+// ============================================================
+
+function ImpChoiceStatusHelper({
+  state,
+  toggleDone,
+}: {
+  state: GameState;
+  toggleDone: () => void;
+}): React.ReactElement {
+  const { t } = useTranslation();
+  const impTarget = state.grimoire.impTarget;
+
+  const targetName = impTarget
+    ? (state.grimoire.players.find((p) => p.id === impTarget)?.name ??
+      impTarget)
+    : null;
+
+  if (!targetName) {
+    return (
+      <div className="ml-6 mt-1 text-xs text-amber-300 italic">
+        {t("night.imp_waiting")}
+      </div>
+    );
+  }
+
+  return (
+    <div className="ml-6 mt-1 flex items-center gap-2">
+      <span className="text-xs text-emerald-300">
+        {t("night.imp_chosen", { name: targetName })}
+      </span>
+      <button onClick={toggleDone} className="btn-primary btn-sm">
+        {t("night.done")}
+      </button>
+    </div>
   );
 }
 

@@ -98,6 +98,11 @@ export function PlayerView({
         {voting && <ActiveVote state={state} />}
 
         <div className="mt-4 space-y-3">
+          <ImpNightPanel
+            state={state}
+            playerId={playerId}
+            dispatch={dispatch}
+          />
           <VoteButtons state={state} playerId={playerId} dispatch={dispatch} />
           <NominatePanel
             state={state}
@@ -482,6 +487,67 @@ function SlayerPanel({
           className="btn-purple"
         >
           {t("player.shoot")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Imp night panel — choose who to kill tonight
+// ============================================================
+
+function ImpNightPanel({
+  state,
+  playerId,
+  dispatch,
+}: {
+  state: PlayerSnapshot;
+  playerId: string | undefined;
+  dispatch: (a: Action) => void;
+}): React.ReactElement {
+  const { t } = useTranslation();
+  const [targetId, setTargetId] = useState<string>("");
+
+  if (!playerId) return <></>;
+  if (!state.pendingImpChoice) return <></>;
+
+  const allPlayers = state.grimoire.players;
+  const resolvedTarget = targetId || allPlayers[0]?.id;
+
+  return (
+    <div className="p-4 panel-evil border-2">
+      <div className="font-semibold text-slate-100 mb-1 text-sm">
+        {t("player.imp_kill_title")}
+      </div>
+      <div className="text-xs text-slate-400 mb-3">
+        {t("player.imp_kill_desc")}
+      </div>
+      <div className="flex gap-2 items-center">
+        <select
+          value={resolvedTarget}
+          onChange={(e) => setTargetId(e.target.value)}
+          className="form-select flex-1"
+        >
+          {allPlayers.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+              {!p.isAlive ? ` ${t("player.dead_suffix")}` : ""}
+              {p.id === playerId ? ` ${t("player.imp_self_label")}` : ""}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={() =>
+            dispatch({
+              type: "night-choice",
+              playerId,
+              targetIds: [resolvedTarget],
+            })
+          }
+          className="btn-danger"
+        >
+          {t("player.imp_confirm")}
         </button>
       </div>
     </div>
