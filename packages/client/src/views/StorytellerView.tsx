@@ -91,8 +91,14 @@ function buildRandomBag(names: string[], baronInPlay: boolean): CharacterId[] {
   return buildTokenBag({ playerCount: n, baronInPlay });
 }
 
-function buildPlayers(names: string[], bag: CharacterId[]): Player[] {
-  const drunkFake = findDrunkFakeCharacter(bag, [...TB_BY_ALIGNMENT.townsfolk]);
+function buildPlayers(
+  names: string[],
+  bag: CharacterId[],
+  drunkPerceivedChar?: CharacterId | null,
+): Player[] {
+  const drunkFake =
+    drunkPerceivedChar ??
+    findDrunkFakeCharacter(bag, [...TB_BY_ALIGNMENT.townsfolk]);
 
   return names.map((rawName, i) => {
     const charId = bag[i];
@@ -122,8 +128,22 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
   const [bag, setBag] = useState<CharacterId[]>(() =>
     buildRandomBag(DEFAULT_NAMES, false),
   );
+  const [drunkPerceivedChar, setDrunkPerceivedChar] =
+    useState<CharacterId | null>(null);
 
-  const reroll = () => setBag(buildRandomBag(names, baronInPlay));
+  // Townsfolk not in the bag — valid choices for the Drunk's fake identity
+  const availableDrunkChoices = (
+    TB_BY_ALIGNMENT.townsfolk as CharacterId[]
+  ).filter((id) => !bag.includes(id));
+
+  // The effective perceived character (explicit choice or first available)
+  const effectiveDrunkChoice: CharacterId | null =
+    drunkPerceivedChar ?? availableDrunkChoices[0] ?? null;
+
+  const reroll = () => {
+    setBag(buildRandomBag(names, baronInPlay));
+    setDrunkPerceivedChar(null);
+  };
 
   const updateName = (i: number, value: string) => {
     const next = [...names];
@@ -136,6 +156,7 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
       const next = [...names, `Player ${names.length + 1}`];
       setNames(next);
       setBag(buildRandomBag(next, baronInPlay));
+      setDrunkPerceivedChar(null);
     }
   };
 
@@ -144,6 +165,7 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
       const next = names.filter((_, idx) => idx !== i);
       setNames(next);
       setBag(buildRandomBag(next, baronInPlay));
+      setDrunkPerceivedChar(null);
     }
   };
 
@@ -151,11 +173,12 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
     const next = !baronInPlay;
     setBaronInPlay(next);
     setBag(buildRandomBag(names, next));
+    setDrunkPerceivedChar(null);
   };
 
   const handleStart = () => {
     if (bag.length !== names.length) return;
-    const players = buildPlayers(names, bag);
+    const players = buildPlayers(names, bag, effectiveDrunkChoice);
     send({ type: "setup-players", payload: players });
     send({ type: "action", payload: { type: "start-game" } });
   };
@@ -163,7 +186,9 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
   const valid = names.length >= 5 && names.length <= 15;
 
   const players =
-    valid && bag.length === names.length ? buildPlayers(names, bag) : [];
+    valid && bag.length === names.length
+      ? buildPlayers(names, bag, effectiveDrunkChoice)
+      : [];
 
   return (
     <div className="max-w-2xl">
@@ -234,14 +259,24 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
                   >
                     {charName}
                     {p?.isDrunk && (
-                      <span className="text-amber-500 ml-2 text-xs">
-                        (
-                        {t("setup.believes", {
-                          character: t(`characters.${p.perceivedCharacter}`, {
-                            defaultValue: p.perceivedCharacter,
-                          }),
-                        })}
-                        )
+                      <span className="ml-2 inline-flex items-center gap-1">
+                        <span className="text-amber-500 text-xs">
+                          {t("setup.drunk_believes_label")}
+                        </span>
+                        <select
+                          value={effectiveDrunkChoice ?? ""}
+                          onChange={(e) =>
+                            setDrunkPerceivedChar(e.target.value as CharacterId)
+                          }
+                          className="form-select text-xs py-0.5 text-amber-300"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {availableDrunkChoices.map((id) => (
+                            <option key={id} value={id}>
+                              {t(`characters.${id}`, { defaultValue: id })}
+                            </option>
+                          ))}
+                        </select>
                       </span>
                     )}
                   </td>
@@ -504,6 +539,7 @@ function PlayerRow({
     seatIndex,
     name,
     trueCharacter,
+    perceivedCharacter,
     alignment,
     isAlive,
     isPoisoned,
@@ -544,6 +580,17 @@ function PlayerRow({
       {cell(
         <span className="capitalize text-slate-300">
           {t(`characters.${trueCharacter}`, { defaultValue: trueCharacter })}
+          {isDrunk && (
+            <span className="text-amber-400 ml-1 text-xs normal-case">
+              (
+              {t("setup.believes", {
+                character: t(`characters.${perceivedCharacter}`, {
+                  defaultValue: perceivedCharacter,
+                }),
+              })}
+              )
+            </span>
+          )}
         </span>,
         "text-left",
       )}

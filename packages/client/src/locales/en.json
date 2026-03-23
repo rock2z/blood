@@ -23,6 +23,7 @@
     "character": "Character",
     "align": "Align",
     "believes": "believes: {{character}}",
+    "drunk_believes_label": "believes →",
     "add_player": "+ Add Player",
     "reroll": "↺ Re-roll Characters",
     "start_game": "▶ Start Game",

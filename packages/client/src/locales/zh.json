@@ -23,6 +23,7 @@
     "character": "角色",
     "align": "阵营",
     "believes": "认为自己是：{{character}}",
+    "drunk_believes_label": "认为自己是 →",
     "add_player": "+ 添加玩家",
     "reroll": "↺ 重新随机角色",
     "start_game": "▶ 开始游戏",
