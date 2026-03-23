@@ -18,7 +18,7 @@ function devShortcuts(): import("vite").Plugin {
           `  ${dim("Storyteller")}   ${cyan(`${base}/?role=storyteller`)}`,
         );
         console.log(
-          `  ${dim("Player       ")}  ${cyan(`${base}/?playerId=<name>`)}  ${dim("(replace <name> with each player's name)")}`,
+          `  ${dim("Player       ")}  ${cyan(`${base}/?playerId=player-1`)}`,
         );
         console.log(
           `  ${dim("Custom room  ")}  ${cyan(`${base}/?room=<room>&role=storyteller`)}`,
