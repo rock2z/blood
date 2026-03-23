@@ -11,7 +11,11 @@
 
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Action, TB_BY_ALIGNMENT } from "@botc/engine";
+import {
+  Action,
+  TB_BY_ALIGNMENT,
+  TROUBLE_BREWING_CHARACTERS,
+} from "@botc/engine";
 import { PlayerSnapshot, PublicPlayer, SendFn } from "../useGame";
 
 // Keep in sync with engine character data by deriving from TB_BY_ALIGNMENT
@@ -142,6 +146,11 @@ function MyCharacterCard({
       <span className={isEvil ? "badge-evil" : "badge-good"}>
         {isEvil ? t("player.evil") : t("player.good")}
       </span>
+      {TROUBLE_BREWING_CHARACTERS[myCharacter]?.abilityText && (
+        <p className="mt-3 text-xs text-slate-300 leading-snug italic">
+          {TROUBLE_BREWING_CHARACTERS[myCharacter].abilityText}
+        </p>
+      )}
 
       {myDemonBluffs && myDemonBluffs.length > 0 && (
         <div className="mt-4 pt-4 border-t border-rose-500/20">
