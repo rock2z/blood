@@ -93,6 +93,7 @@ function makePlayerSnapshot(
     nominatorsUsed: [],
     nominatedToday: [],
     pendingRavenkeeperChoice: false,
+    pendingMinionPromotion: false,
     grimoire: makePlayerGrimoire(),
     ...overrides,
   };

@@ -124,6 +124,7 @@ export function clearNightState(grimoire: Grimoire): Grimoire {
     impTarget: null,
     mayorRedirectTarget: null,
     monkProtectionTarget: null,
+    poisonerTarget: null,
     executedToday: null,
   };
 }

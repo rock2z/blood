@@ -332,9 +332,7 @@ function handleRavenkeeperChoice(
     );
   }
 
-  // Validate target exists (the Ravenkeeper learns this player's character;
-  // the actual info delivery is Storyteller-side — we just record the pick and unblock).
-  getPlayer(state.grimoire, action.targetId);
+  const target = getPlayer(state.grimoire, action.targetId);
 
   const log = [
     ...state.log,
@@ -346,7 +344,19 @@ function handleRavenkeeperChoice(
     },
   ];
 
-  return finaliseNightResolution({ ...state, log });
+  const resolved = finaliseNightResolution({ ...state, log });
+
+  // Deliver the target's true character to the Ravenkeeper.
+  // finaliseNightResolution clears nightInfo, so we re-inject after the call
+  // so the Ravenkeeper sees their result at the start of the following day.
+  const ravenkeeper = getPlayerByCharacter(state.grimoire, "ravenkeeper");
+  if (ravenkeeper) {
+    return {
+      ...resolved,
+      nightInfo: { [ravenkeeper.id]: target.trueCharacter },
+    };
+  }
+  return resolved;
 }
 
 // ============================================================
@@ -874,23 +884,36 @@ function handleSlayerShoot(
       "player-died",
     );
 
-    const { grimoire: swGrimoire, activated } =
-      tryActivateScarletWoman(deadGrimoire);
+    const {
+      grimoire: swGrimoire,
+      activated,
+      activatedPlayerId,
+    } = tryActivateScarletWoman(deadGrimoire);
     const finalGrimoire = activated ? swGrimoire : deadGrimoire;
     const winner = checkWinCondition(finalGrimoire);
+
+    const slayerLog: typeof log = [
+      ...log,
+      {
+        type: "slayer-fired" as const,
+        night: state.day,
+        phase: state.phase,
+        payload: { slayerId: action.slayerId, targetId: action.targetId },
+      },
+    ];
+    if (activated) {
+      slayerLog.push({
+        type: "scarlet-woman-activated" as const,
+        night: state.day,
+        phase: state.phase,
+        payload: { activatedPlayerId },
+      });
+    }
 
     updatedState = {
       ...updatedState,
       grimoire: finalGrimoire,
-      log: [
-        ...log,
-        {
-          type: "slayer-fired" as const,
-          night: state.day,
-          phase: state.phase,
-          payload: { slayerId: action.slayerId, targetId: action.targetId },
-        },
-      ],
+      log: slayerLog,
       winner: winner ?? updatedState.winner,
       phase: winner ? "game-over" : updatedState.phase,
     };

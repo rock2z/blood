@@ -26,7 +26,8 @@
     "add_player": "+ 添加玩家",
     "reroll": "↺ 重新随机角色",
     "start_game": "▶ 开始游戏",
-    "player_count_error": "《血染钟楼》需要 5–15 名玩家。"
+    "player_count_error": "《血染钟楼》需要 5–15 名玩家。",
+    "baron_in_play": "男爵在局（+2 外来者）"
   },
   "grimoire": {
     "title": "魔法书",
@@ -177,7 +178,8 @@
     "shoot": "射击",
     "ravenkeeper_title": "养鸦人 — 选择一名玩家了解其角色",
     "choose": "选择",
-    "dead_suffix": "（死亡）"
+    "dead_suffix": "（死亡）",
+    "waiting_storyteller": "等待故事讲述者…"
   },
   "characters": {
     "washerwoman": "洗衣妇",
