@@ -174,12 +174,6 @@ function MyCharacterCard({
       <span className={isEvil ? "badge-evil" : "badge-good"}>
         {isEvil ? t("player.evil") : t("player.good")}
       </span>
-      {TROUBLE_BREWING_CHARACTERS[myCharacter]?.abilityText && (
-        <p className="mt-3 text-xs text-slate-300 leading-snug italic">
-          {TROUBLE_BREWING_CHARACTERS[myCharacter].abilityText}
-        </p>
-      )}
-
       {abilityText && (
         <div
           className={cx(
