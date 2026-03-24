@@ -26,13 +26,46 @@ Documented edge cases discovered during development, with official rule referenc
 
 **Rule**: In the physical game, the Drunk holds the actual Washerwoman character token, which has the ability text printed on it. They fully believe they are the Washerwoman and act accordingly. The Storyteller delivers information _as if_ they were the Washerwoman (but potentially false).
 
-**Current implementation gap**: `MyCharacterCard` in `PlayerView.tsx` only displays the character _name_ (`myCharacter`). The character's `abilityText` is not shown. A Drunk player sees "Washerwoman" but has no in-app reference to know what that ability does.
-
-**Expected behavior**: The player card should show the ability text of `myCharacter` (the perceived character), exactly as any real Townsfolk would see it. For the Drunk this will be the fake character's ability text — which is intentional and correct, since they genuinely believe they have that ability.
-
-**Action required**: Display `abilityText` from the character data in `MyCharacterCard`. The `perceivedCharacter` id is already exposed as `myCharacter` in the player snapshot; look up the character definition from `TROUBLE_BREWING_CHARACTERS` to get the ability text.
+**Implementation**: ✅ Resolved. `MyCharacterCard` in `PlayerView.tsx` looks up `abilityText` from `TROUBLE_BREWING_CHARACTERS[myCharacter]` where `myCharacter` is the `perceivedCharacter` exposed by the server filter. The Drunk sees the fake character's ability text, exactly as a real Townsfolk would.
 
 **Source**: [Drunk - Blood on the Clocktower Wiki](https://wiki.bloodontheclocktower.com/Drunk)
+
+---
+
+---
+
+## Mayor Edge Cases
+
+### EC-3: Mayor redirect when Monk also protects the Mayor
+
+**Scenario**: The Monk chooses to protect the Mayor. On the same night, the Imp targets the Mayor and the Storyteller has set a Mayor redirect target (Player X).
+
+**Rule**: The Mayor's passive redirect ability fires when the Demon _attacks_ the Mayor (while Mayor is alive and healthy). Monk protection prevents a player from _dying_; it does not prevent the Mayor's ability from triggering.
+
+**Implementation decision**: In `dispatch.ts`, the Mayor redirect is evaluated before the Monk protection check for the kill target. The redirect takes the kill away from the Mayor (to Player X), then Player X's protection status is checked. The Mayor's own `isProtected` flag is never consulted in this path.
+
+**Practical effect**:
+
+- If Monk protects Mayor and Mayor redirect is set → redirect fires; Player X may die. Mayor survives because the kill was redirected (not because Monk protected them).
+- If Monk protects Mayor and **no** redirect is set → Mayor is the effective kill target, `isProtected` blocks the kill, no one dies.
+
+**Conclusion**: This is the correct behaviour. Monk protection of the Mayor is effectively "wasted" when a redirect is also set, because the Mayor was never going to die anyway. The Monk's protection would matter only in the no-redirect case.
+
+---
+
+## Butler Edge Cases
+
+### EC-4: Butler sequential-voting limitation in digital play
+
+**Scenario**: In the physical game, all players raise their hands simultaneously (or a show-of-hands is resolved simultaneously). The Butler may vote YES if, at the moment their hand is counted, their Master's hand is already up.
+
+In the digital implementation, voting is strictly sequential (clockwise from the player left of the nominated, nominated player last). The Butler can only see votes that have already been cast.
+
+**Rule (digital interpretation)**: The Butler may vote YES only if their Master has voted YES in the same nomination **before** Butler's turn comes around. If the Master's seat is later in the clockwise order than the Butler's, the Master has not yet voted when Butler's turn arrives, and the Butler is forced to vote NO.
+
+**Implementation**: `dispatch.ts` enforces this: if `voting.votes[masterId] !== true` when Butler votes, `effectiveVote` is overridden to `false`.
+
+**Implication for play**: Storytellers and players should be aware that a Butler whose Master sits "behind" them in the vote order can never vote YES on a given nomination. This is an inherent limitation of sequential digital voting vs. simultaneous physical hand-raises and does not represent a bug.
 
 ---
 
