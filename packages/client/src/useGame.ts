@@ -10,7 +10,13 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { GameState, Action, CharacterId, PlayerId } from "@botc/engine";
+import {
+  GameState,
+  Action,
+  CharacterId,
+  PlayerId,
+  Alignment,
+} from "@botc/engine";
 
 export type SendFn = (msg: ClientMessage) => void;
 
@@ -26,6 +32,21 @@ export type ClientMessage =
 // ============================================================
 // Snapshot types — mirrors packages/server/src/stateFilter.ts
 // ============================================================
+
+/**
+ * One row of the Spy's Grimoire view — mirrors SpyGrimoirePlayer in
+ * packages/server/src/stateFilter.ts.
+ */
+export interface SpyGrimoirePlayer {
+  id: PlayerId;
+  name: string;
+  trueCharacter: CharacterId;
+  alignment: Alignment;
+  isAlive: boolean;
+  isPoisoned: boolean;
+  isDrunk: boolean;
+  isProtected: boolean;
+}
 
 /** Public information other players can see about any player */
 export interface PublicPlayer {
@@ -47,6 +68,11 @@ export interface PlayerGrimoire {
   executedToday: CharacterId | null;
   /** Night information delivered by the Storyteller to this player tonight */
   myNightInfo: string | null;
+  /**
+   * Spy-only: full character/alignment data for every player, visible each
+   * night.  Null for all other characters.
+   */
+  mySpyGrimoire: SpyGrimoirePlayer[] | null;
 }
 
 /** Full state snapshot sent to the Storyteller */

@@ -77,6 +77,7 @@ function makePlayerGrimoire(
     virginAbilityFired: false,
     executedToday: null,
     myNightInfo: null,
+    mySpyGrimoire: null,
     ...overrides,
   };
 }
