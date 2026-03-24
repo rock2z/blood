@@ -710,6 +710,90 @@ describe("resolve-night — Mayor redirect", () => {
       dispatch(s, { type: "storyteller-mayor-redirect", targetId: "p1" }),
     ).toThrow();
   });
+
+  test("Monk protects Mayor AND redirect is set → redirect fires, redirected target dies", () => {
+    // EC-3: when both Monk protection and Mayor redirect are active, the redirect
+    // fires (taking the kill away from Mayor) and the redirected player may die.
+    // Mayor's isProtected flag is never consulted in this path — Monk protection
+    // of Mayor is effectively redundant when a redirect is also set.
+    let s = dayState(mayorPlayers());
+    s = dispatch(s, { type: "advance-to-night" });
+
+    // Monk (p1) protects Mayor
+    s = dispatch(s, {
+      type: "night-choice",
+      playerId: "imp",
+      targetIds: ["mayor"],
+    });
+    // Directly set Mayor's isProtected to simulate Monk protecting Mayor
+    // (Monk acts before Imp in night order; here we patch state directly)
+    s = {
+      ...s,
+      grimoire: {
+        ...s.grimoire,
+        players: s.grimoire.players.map((p) =>
+          p.id === "mayor" ? { ...p, isProtected: true } : p,
+        ),
+      },
+    };
+    // Storyteller also sets a redirect to "victim"
+    s = dispatch(s, { type: "storyteller-mayor-redirect", targetId: "victim" });
+    s = dispatch(s, { type: "resolve-night" });
+
+    // Redirect fires: Mayor survives (not because of Monk, but because kill
+    // went to victim instead), victim dies
+    expect(s.grimoire.players.find((p) => p.id === "mayor")!.isAlive).toBe(
+      true,
+    );
+    expect(s.grimoire.players.find((p) => p.id === "victim")!.isAlive).toBe(
+      false,
+    );
+  });
+
+  test("Monk protects Mayor and NO redirect is set → kill blocked, no one dies", () => {
+    // When Monk protects Mayor and there is no redirect, Mayor is the effective
+    // kill target; isProtected blocks the kill entirely.
+    // Need a Monk in the roster so monkEffective resolves to true.
+    const playersWithMonk = () => [
+      makePlayer({
+        id: "imp",
+        trueCharacter: "imp",
+        alignment: "Demon",
+        seatIndex: 0,
+      }),
+      makePlayer({ id: "mayor", trueCharacter: "mayor", seatIndex: 1 }),
+      makePlayer({ id: "victim", trueCharacter: "empath", seatIndex: 2 }),
+      makePlayer({ id: "monk", trueCharacter: "monk", seatIndex: 3 }),
+      makePlayer({ id: "p5", seatIndex: 4 }),
+    ];
+    let s = dayState(playersWithMonk());
+    s = dispatch(s, { type: "advance-to-night" });
+    s = dispatch(s, {
+      type: "night-choice",
+      playerId: "imp",
+      targetIds: ["mayor"],
+    });
+    // Monk protects Mayor; patch state directly (Monk acts before Imp in order)
+    s = {
+      ...s,
+      grimoire: {
+        ...s.grimoire,
+        players: s.grimoire.players.map((p) =>
+          p.id === "mayor" ? { ...p, isProtected: true } : p,
+        ),
+        monkProtectionTarget: "mayor",
+      },
+    };
+    s = dispatch(s, { type: "resolve-night" });
+
+    // Kill is blocked — no one dies
+    expect(s.grimoire.players.find((p) => p.id === "mayor")!.isAlive).toBe(
+      true,
+    );
+    expect(s.grimoire.players.find((p) => p.id === "victim")!.isAlive).toBe(
+      true,
+    );
+  });
 });
 
 describe("resolve-night — Ravenkeeper", () => {
