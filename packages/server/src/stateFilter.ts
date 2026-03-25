@@ -6,7 +6,7 @@
  * Player:      public GameState + their own private character info
  */
 
-import { GameState, PlayerId, CharacterId } from "@botc/engine";
+import { GameState, PlayerId, CharacterId, Alignment } from "@botc/engine";
 
 // ============================================================
 // Public player view (what other players see about you)
@@ -24,6 +24,21 @@ export interface PublicPlayer {
 // Filtered state types
 // ============================================================
 
+/**
+ * One row of the Spy's Grimoire view — the true information the Spy sees
+ * for each player each night.
+ */
+export interface SpyGrimoirePlayer {
+  id: PlayerId;
+  name: string;
+  trueCharacter: CharacterId;
+  alignment: Alignment;
+  isAlive: boolean;
+  isPoisoned: boolean;
+  isDrunk: boolean;
+  isProtected: boolean;
+}
+
 /** The grimoire view a regular player receives */
 export interface PlayerGrimoire {
   /** Public info for every player at the table */
@@ -38,6 +53,12 @@ export interface PlayerGrimoire {
   executedToday: CharacterId | null;
   /** Night information delivered by the Storyteller to this player tonight */
   myNightInfo: string | null;
+  /**
+   * Spy-only: full character/alignment data for every player, visible to
+   * the Spy each night (first night and each subsequent night).
+   * Null for all other players.
+   */
+  mySpyGrimoire: SpyGrimoirePlayer[] | null;
 }
 
 /** The full state snapshot sent to the Storyteller */
@@ -103,9 +124,29 @@ export function filterForPlayer(
   // Night info delivered by the Storyteller to this specific player
   const myNightInfo = state.nightInfo[playerId] ?? null;
 
+  const isNight = state.phase === "first-night" || state.phase === "night";
+  const isEachNight = state.phase === "night";
+
   // Demon bluffs only visible to the Imp player
   const isImp = me?.trueCharacter === "imp";
   const myDemonBluffs = isImp ? grimoire.demonBluffs : null;
+
+  // Spy Grimoire: the Spy sees true character, alignment, and status tokens
+  // for every player during each night phase (first night and each-night).
+  const isSpy = me?.trueCharacter === "spy";
+  const mySpyGrimoire: SpyGrimoirePlayer[] | null =
+    isSpy && isNight
+      ? grimoire.players.map((p) => ({
+          id: p.id,
+          name: p.name,
+          trueCharacter: p.trueCharacter,
+          alignment: p.alignment,
+          isAlive: p.isAlive,
+          isPoisoned: p.isPoisoned,
+          isDrunk: p.isDrunk,
+          isProtected: p.isProtected,
+        }))
+      : null;
 
   const publicPlayers: PublicPlayer[] = grimoire.players.map((p) => ({
     id: p.id,
@@ -114,9 +155,6 @@ export function filterForPlayer(
     ghostVoteUsed: p.ghostVoteUsed,
     seatIndex: p.seatIndex,
   }));
-
-  const isNight = state.phase === "first-night" || state.phase === "night";
-  const isEachNight = state.phase === "night";
 
   return {
     role: "player",
@@ -173,6 +211,7 @@ export function filterForPlayer(
       virginAbilityFired: grimoire.virginAbilityFired,
       executedToday: grimoire.executedToday,
       myNightInfo,
+      mySpyGrimoire,
     },
   };
 }

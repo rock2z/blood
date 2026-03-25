@@ -16,7 +16,12 @@ import {
   TB_BY_ALIGNMENT,
   TROUBLE_BREWING_CHARACTERS,
 } from "@botc/engine";
-import { PlayerSnapshot, PublicPlayer, SendFn } from "../useGame";
+import {
+  PlayerSnapshot,
+  PublicPlayer,
+  SpyGrimoirePlayer,
+  SendFn,
+} from "../useGame";
 
 // Keep in sync with engine character data by deriving from TB_BY_ALIGNMENT
 // (packages/engine/src/data/troubleBrewing.ts) rather than hardcoding IDs.
@@ -86,6 +91,7 @@ export function PlayerView({
 
         <DayAnnouncementsPanel state={state} />
         <NightInfoPanel grimoire={grimoire} />
+        <SpyGrimoirePanel grimoire={grimoire} />
         {state.pendingMinionPromotion && (
           <div className="mb-4 p-4 panel-night text-center text-sm text-indigo-300">
             {t("player.waiting_storyteller")}
@@ -174,12 +180,6 @@ function MyCharacterCard({
       <span className={isEvil ? "badge-evil" : "badge-good"}>
         {isEvil ? t("player.evil") : t("player.good")}
       </span>
-      {TROUBLE_BREWING_CHARACTERS[myCharacter]?.abilityText && (
-        <p className="mt-3 text-xs text-slate-300 leading-snug italic">
-          {TROUBLE_BREWING_CHARACTERS[myCharacter].abilityText}
-        </p>
-      )}
-
       {abilityText && (
         <div
           className={cx(
@@ -388,6 +388,86 @@ function NightInfoPanel({
       </div>
       <div className="text-slate-200 text-sm leading-relaxed">
         {grimoire.myNightInfo}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Spy Grimoire panel — shown to the Spy each night
+// ============================================================
+
+function SpyGrimoirePanel({
+  grimoire,
+}: {
+  grimoire: PlayerSnapshot["grimoire"];
+}): React.ReactElement {
+  const { t } = useTranslation();
+  const { mySpyGrimoire } = grimoire;
+
+  if (!mySpyGrimoire) return <></>;
+
+  return (
+    <div className="mb-4 p-4 panel-night">
+      <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-3">
+        {t("player.spy_grimoire_title", { defaultValue: "Grimoire (Spy)" })}
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="text-zinc-500 border-b border-white/[0.06]">
+              <th className="text-left pb-1 pr-3">
+                {t("player.spy_col_name", { defaultValue: "Player" })}
+              </th>
+              <th className="text-left pb-1 pr-3">
+                {t("player.spy_col_character", { defaultValue: "Character" })}
+              </th>
+              <th className="text-left pb-1 pr-3">
+                {t("player.spy_col_align", { defaultValue: "Align" })}
+              </th>
+              <th className="text-left pb-1">
+                {t("player.spy_col_status", { defaultValue: "Status" })}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {mySpyGrimoire.map((p: SpyGrimoirePlayer) => {
+              const isEvil =
+                p.alignment === "Minion" || p.alignment === "Demon";
+              const statusTokens: string[] = [];
+              if (!p.isAlive) statusTokens.push("dead");
+              if (p.isPoisoned) statusTokens.push("poisoned");
+              if (p.isDrunk) statusTokens.push("drunk");
+              if (p.isProtected) statusTokens.push("protected");
+              return (
+                <tr
+                  key={p.id}
+                  className={cx(
+                    "border-b border-white/[0.04] last:border-0",
+                    !p.isAlive && "opacity-50",
+                  )}
+                >
+                  <td className="py-1 pr-3 text-slate-200">{p.name}</td>
+                  <td className="py-1 pr-3 text-slate-300 capitalize">
+                    {t(`characters.${p.trueCharacter}`, {
+                      defaultValue: p.trueCharacter,
+                    })}
+                  </td>
+                  <td className="py-1 pr-3">
+                    <span className={isEvil ? "badge-evil" : "badge-good"}>
+                      {p.alignment}
+                    </span>
+                  </td>
+                  <td className="py-1 text-zinc-400">
+                    {statusTokens.length > 0
+                      ? statusTokens.join(", ")
+                      : "\u2014"}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );

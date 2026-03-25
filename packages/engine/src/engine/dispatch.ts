@@ -4,6 +4,7 @@
 // ============================================================
 
 import { GameState, VotingState, PlayerId } from "../types";
+import { TROUBLE_BREWING_CHARACTERS } from "../data/troubleBrewing";
 import {
   getPlayer,
   getAlivePlayers,
@@ -380,7 +381,9 @@ function handleRavenkeeperChoice(
   if (ravenkeeper) {
     return {
       ...resolved,
-      nightInfo: { [ravenkeeper.id]: target.trueCharacter },
+      nightInfo: {
+        [ravenkeeper.id]: TROUBLE_BREWING_CHARACTERS[target.trueCharacter].name,
+      },
     };
   }
   return resolved;

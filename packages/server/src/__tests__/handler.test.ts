@@ -249,6 +249,95 @@ describe("setup-players", () => {
     expect(room.state.grimoire.players).toHaveLength(5);
   });
 
+  test("setup-players with a Drunk player patches the Drunk's perceivedCharacter", () => {
+    const room = createRoom("test");
+    const client = makeMockClient("test", "storyteller");
+    room.clients.add(client);
+
+    // Build 5-player list where one player is the Drunk
+    const drunkPlayers: Player[] = [
+      {
+        id: "imp",
+        name: "Imp",
+        seatIndex: 0,
+        trueCharacter: "imp",
+        perceivedCharacter: "imp",
+        alignment: "Demon",
+        isAlive: true,
+        isPoisoned: false,
+        isDrunk: false,
+        isProtected: false,
+        ghostVoteUsed: false,
+      },
+      {
+        id: "drunk",
+        name: "Drunk",
+        seatIndex: 1,
+        trueCharacter: "drunk",
+        perceivedCharacter: "drunk", // will be overwritten by handler
+        alignment: "Outsider",
+        isAlive: true,
+        isPoisoned: false,
+        isDrunk: true,
+        isProtected: false,
+        ghostVoteUsed: false,
+      },
+      {
+        id: "p3",
+        name: "P3",
+        seatIndex: 2,
+        trueCharacter: "soldier",
+        perceivedCharacter: "soldier",
+        alignment: "Townsfolk",
+        isAlive: true,
+        isPoisoned: false,
+        isDrunk: false,
+        isProtected: false,
+        ghostVoteUsed: false,
+      },
+      {
+        id: "p4",
+        name: "P4",
+        seatIndex: 3,
+        trueCharacter: "empath",
+        perceivedCharacter: "empath",
+        alignment: "Townsfolk",
+        isAlive: true,
+        isPoisoned: false,
+        isDrunk: false,
+        isProtected: false,
+        ghostVoteUsed: false,
+      },
+      {
+        id: "p5",
+        name: "P5",
+        seatIndex: 4,
+        trueCharacter: "mayor",
+        perceivedCharacter: "mayor",
+        alignment: "Townsfolk",
+        isAlive: true,
+        isPoisoned: false,
+        isDrunk: false,
+        isProtected: false,
+        ghostVoteUsed: false,
+      },
+    ];
+
+    handleMessage(client, room, {
+      type: "setup-players",
+      payload: drunkPlayers,
+    });
+
+    const drunkInState = room.state.grimoire.players.find(
+      (p) => p.trueCharacter === "drunk",
+    );
+    expect(drunkInState).toBeDefined();
+    // The Drunk's perceivedCharacter must be a Townsfolk not in the bag
+    expect(drunkInState!.perceivedCharacter).not.toBe("drunk");
+    const inPlay = drunkPlayers.map((p) => p.trueCharacter);
+    expect(inPlay).not.toContain(drunkInState!.perceivedCharacter);
+  });
+
   test("setup-players with 5 players produces no demon bluffs (< 7 players)", () => {
     const room = createRoom("test");
     const client = makeMockClient("test", "storyteller");
@@ -667,6 +756,28 @@ describe("action → broadcast", () => {
     );
   });
 
+  test("player sends action without a playerId receives error", () => {
+    const room = createRoom("test");
+    // A client with role=player but no playerId (e.g. identified as player
+    // before providing an id, or identity set without playerId)
+    const unidentified = makeMockClient("test", "player", undefined);
+    // Override: role is player but playerId is explicitly undefined
+    unidentified.identity = { role: "player", playerId: undefined };
+    room.clients.add(unidentified);
+
+    handleMessage(unidentified, room, {
+      type: "action",
+      payload: { type: "nominate", nominatorId: "anyone", targetId: "other" },
+    });
+
+    expect(lastMsg(unidentified)).toMatchObject({
+      type: "error",
+      payload: expect.stringContaining(
+        "Player action requires an identified playerId",
+      ),
+    });
+  });
+
   test("player nominate action is identity-bound (forged nominatorId is ignored)", () => {
     const room = createRoom("test");
     const stClient = makeMockClient("test", "storyteller");
@@ -909,5 +1020,352 @@ describe("buildSnapshot with undefined playerId", () => {
     expect(snap.role).toBe("player");
     const playerSnap = snap as PlayerSnapshot;
     expect(playerSnap.grimoire.myCharacter).toBe("washerwoman");
+  });
+});
+
+// ============================================================
+// identify — unknown playerId when game has started (lines 76–82)
+// ============================================================
+
+describe("identify with unknown playerId after game started", () => {
+  test("returns error when claimed playerId is not in the game", () => {
+    const room = createRoom("test");
+    // Set up players first so the room has a non-empty player list
+    handleMessage(
+      makeMockClient("test", "storyteller") as unknown as MockClient,
+      room,
+      { type: "setup-players", payload: makePlayers() },
+    );
+
+    const stranger = makeMockClient("test", "player");
+    room.clients.add(stranger);
+
+    handleMessage(stranger, room, {
+      type: "identify",
+      payload: { role: "player", playerId: "unknown-xyz" },
+    });
+
+    expect(lastMsg(stranger)).toEqual({
+      type: "error",
+      payload: "Unknown playerId: unknown-xyz",
+    });
+  });
+
+  test("identify succeeds when playerId is empty and game has no players yet", () => {
+    const room = createRoom("test");
+    const client = makeMockClient("test", "player");
+    room.clients.add(client);
+
+    // No setup-players yet → player list is empty → validation skipped
+    handleMessage(client, room, {
+      type: "identify",
+      payload: { role: "player", playerId: "anyone" },
+    });
+
+    expect(lastMsg(client).type).toBe("snapshot");
+  });
+});
+
+// ============================================================
+// ravenkeeper-choice action guards (handler lines 170–198)
+// ============================================================
+
+describe("ravenkeeper-choice action guard", () => {
+  /** Build a game state where the Ravenkeeper was just killed and is pending choice */
+  function makeRavenkeeperPendingState() {
+    // Players: ravenkeeper (killed by imp this night), imp, two others
+    const players: Player[] = [
+      {
+        id: "rk",
+        name: "RK",
+        seatIndex: 0,
+        trueCharacter: "ravenkeeper",
+        perceivedCharacter: "ravenkeeper",
+        alignment: "Townsfolk",
+        isAlive: true,
+        isPoisoned: false,
+        isDrunk: false,
+        isProtected: false,
+        ghostVoteUsed: false,
+      },
+      {
+        id: "imp",
+        name: "Imp",
+        seatIndex: 1,
+        trueCharacter: "imp",
+        perceivedCharacter: "imp",
+        alignment: "Demon",
+        isAlive: true,
+        isPoisoned: false,
+        isDrunk: false,
+        isProtected: false,
+        ghostVoteUsed: false,
+      },
+      {
+        id: "alice",
+        name: "Alice",
+        seatIndex: 2,
+        trueCharacter: "chef",
+        perceivedCharacter: "chef",
+        alignment: "Townsfolk",
+        isAlive: true,
+        isPoisoned: false,
+        isDrunk: false,
+        isProtected: false,
+        ghostVoteUsed: false,
+      },
+      {
+        id: "bob",
+        name: "Bob",
+        seatIndex: 3,
+        trueCharacter: "soldier",
+        perceivedCharacter: "soldier",
+        alignment: "Townsfolk",
+        isAlive: true,
+        isPoisoned: false,
+        isDrunk: false,
+        isProtected: false,
+        ghostVoteUsed: false,
+      },
+      {
+        id: "carol",
+        name: "Carol",
+        seatIndex: 4,
+        trueCharacter: "empath",
+        perceivedCharacter: "empath",
+        alignment: "Townsfolk",
+        isAlive: true,
+        isPoisoned: false,
+        isDrunk: false,
+        isProtected: false,
+        ghostVoteUsed: false,
+      },
+    ];
+    const room = createRoom("rk-test");
+    const st = makeMockClient("rk-test", "storyteller");
+    room.clients.add(st);
+    handleMessage(st, room, { type: "setup-players", payload: players });
+    handleMessage(st, room, {
+      type: "action",
+      payload: { type: "start-game" },
+    });
+    // Imp kills the Ravenkeeper on first night
+    handleMessage(st, room, {
+      type: "action",
+      payload: { type: "night-choice", playerId: "imp", targetIds: ["rk"] },
+    });
+    handleMessage(st, room, {
+      type: "action",
+      payload: { type: "resolve-night" },
+    });
+    // Advance to night 2 so we can trigger ravenkeeper kill on each-night
+    // Actually we need each-night for imp to kill RK; instead set up state
+    // directly for a pending ravenkeeper choice scenario via advance-to-night
+    // then imp kills RK.
+    handleMessage(st, room, {
+      type: "action",
+      payload: { type: "advance-to-night" },
+    });
+    handleMessage(st, room, {
+      type: "action",
+      payload: { type: "night-choice", playerId: "imp", targetIds: ["rk"] },
+    });
+    // resolve-night will kill RK and set pendingRavenkeeperChoice = true
+    handleMessage(st, room, {
+      type: "action",
+      payload: { type: "resolve-night" },
+    });
+    return { room, st };
+  }
+
+  test("non-Ravenkeeper player is blocked from ravenkeeper-choice", () => {
+    const { room } = makeRavenkeeperPendingState();
+    expect(room.state.pendingRavenkeeperChoice).toBe(true);
+
+    const bobClient = makeMockClient("rk-test", "player", "bob"); // bob is Soldier
+    room.clients.add(bobClient);
+
+    handleMessage(bobClient, room, {
+      type: "action",
+      payload: { type: "ravenkeeper-choice", targetId: "imp" },
+    });
+
+    expect(lastMsg(bobClient)).toMatchObject({
+      type: "error",
+      payload: expect.stringContaining(
+        '"ravenkeeper-choice" is restricted to the Ravenkeeper player',
+      ),
+    });
+    // State must not have changed
+    expect(room.state.pendingRavenkeeperChoice).toBe(true);
+  });
+
+  test("Ravenkeeper player can submit ravenkeeper-choice and it resolves", () => {
+    const { room } = makeRavenkeeperPendingState();
+    expect(room.state.pendingRavenkeeperChoice).toBe(true);
+
+    const rkClient = makeMockClient("rk-test", "player", "rk");
+    room.clients.add(rkClient);
+
+    handleMessage(rkClient, room, {
+      type: "action",
+      payload: { type: "ravenkeeper-choice", targetId: "imp" },
+    });
+
+    // pendingRavenkeeperChoice should now be cleared and phase advances
+    expect(room.state.pendingRavenkeeperChoice).toBe(false);
+    expect(room.state.phase).toBe("day");
+    // RK should have received night info (the Imp's name)
+    expect(room.state.nightInfo["rk"]).toBe("Imp");
+  });
+});
+
+// ============================================================
+// Spy Grimoire view — mySpyGrimoire in stateFilter (line 139)
+// ============================================================
+
+describe("Spy Grimoire view", () => {
+  function makePlayersWithSpy(): Player[] {
+    return [
+      {
+        id: "imp",
+        name: "Imp",
+        seatIndex: 0,
+        trueCharacter: "imp",
+        perceivedCharacter: "imp",
+        alignment: "Demon",
+        isAlive: true,
+        isPoisoned: false,
+        isDrunk: false,
+        isProtected: false,
+        ghostVoteUsed: false,
+      },
+      {
+        id: "spy",
+        name: "Spy",
+        seatIndex: 1,
+        trueCharacter: "spy",
+        perceivedCharacter: "spy",
+        alignment: "Minion",
+        isAlive: true,
+        isPoisoned: false,
+        isDrunk: false,
+        isProtected: false,
+        ghostVoteUsed: false,
+      },
+      {
+        id: "p3",
+        name: "P3",
+        seatIndex: 2,
+        trueCharacter: "chef",
+        perceivedCharacter: "chef",
+        alignment: "Townsfolk",
+        isAlive: true,
+        isPoisoned: false,
+        isDrunk: false,
+        isProtected: false,
+        ghostVoteUsed: false,
+      },
+      {
+        id: "p4",
+        name: "P4",
+        seatIndex: 3,
+        trueCharacter: "soldier",
+        perceivedCharacter: "soldier",
+        alignment: "Townsfolk",
+        isAlive: true,
+        isPoisoned: false,
+        isDrunk: false,
+        isProtected: false,
+        ghostVoteUsed: false,
+      },
+      {
+        id: "p5",
+        name: "P5",
+        seatIndex: 4,
+        trueCharacter: "empath",
+        perceivedCharacter: "empath",
+        alignment: "Townsfolk",
+        isAlive: true,
+        isPoisoned: false,
+        isDrunk: false,
+        isProtected: false,
+        ghostVoteUsed: false,
+      },
+    ];
+  }
+
+  test("Spy receives mySpyGrimoire during first-night (non-null)", () => {
+    const room = createRoom("spy-test");
+    const st = makeMockClient("spy-test", "storyteller");
+    room.clients.add(st);
+    handleMessage(st, room, {
+      type: "setup-players",
+      payload: makePlayersWithSpy(),
+    });
+    handleMessage(st, room, {
+      type: "action",
+      payload: { type: "start-game" },
+    });
+
+    const spyClient = makeMockClient("spy-test", "player", "spy");
+    room.clients.add(spyClient);
+    sendSnapshot(spyClient, room);
+
+    const snap = lastSnapshot(spyClient) as PlayerSnapshot;
+    expect(snap.grimoire.mySpyGrimoire).not.toBeNull();
+    expect(snap.grimoire.mySpyGrimoire).toHaveLength(5);
+    // Spy sees true characters
+    const chars = snap.grimoire.mySpyGrimoire!.map((p) => p.trueCharacter);
+    expect(chars).toContain("imp");
+    expect(chars).toContain("chef");
+  });
+
+  test("non-Spy player receives null mySpyGrimoire during night", () => {
+    const room = createRoom("spy-test2");
+    const st = makeMockClient("spy-test2", "storyteller");
+    room.clients.add(st);
+    handleMessage(st, room, {
+      type: "setup-players",
+      payload: makePlayersWithSpy(),
+    });
+    handleMessage(st, room, {
+      type: "action",
+      payload: { type: "start-game" },
+    });
+
+    const p3Client = makeMockClient("spy-test2", "player", "p3"); // chef
+    room.clients.add(p3Client);
+    sendSnapshot(p3Client, room);
+
+    const snap = lastSnapshot(p3Client) as PlayerSnapshot;
+    expect(snap.grimoire.mySpyGrimoire).toBeNull();
+  });
+
+  test("Spy receives null mySpyGrimoire during day phase (not night)", () => {
+    const room = createRoom("spy-test3");
+    const st = makeMockClient("spy-test3", "storyteller");
+    room.clients.add(st);
+    handleMessage(st, room, {
+      type: "setup-players",
+      payload: makePlayersWithSpy(),
+    });
+    handleMessage(st, room, {
+      type: "action",
+      payload: { type: "start-game" },
+    });
+    handleMessage(st, room, {
+      type: "action",
+      payload: { type: "resolve-night" },
+    });
+    // Now in day phase
+    expect(room.state.phase).toBe("day");
+
+    const spyClient = makeMockClient("spy-test3", "player", "spy");
+    room.clients.add(spyClient);
+    sendSnapshot(spyClient, room);
+
+    const snap = lastSnapshot(spyClient) as PlayerSnapshot;
+    expect(snap.grimoire.mySpyGrimoire).toBeNull();
   });
 });

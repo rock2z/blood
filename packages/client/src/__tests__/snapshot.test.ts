@@ -77,6 +77,7 @@ function makePlayerGrimoire(
     virginAbilityFired: false,
     executedToday: null,
     myNightInfo: null,
+    mySpyGrimoire: null,
     ...overrides,
   };
 }
@@ -247,5 +248,171 @@ describe("StorytellerSnapshot full access", () => {
     // Storyteller can see the full GameState including all phase info
     expect(typeof snap.state.day).toBe("number");
     expect(snap.state.winner).toBeNull();
+  });
+});
+
+// ============================================================
+// Pending night-choice flags
+// ============================================================
+
+describe("pending night-choice flags in PlayerSnapshot", () => {
+  test("pendingImpChoice is true only for the Imp during night when no target set", () => {
+    const snap = makePlayerSnapshot({ phase: "night", pendingImpChoice: true });
+    expect(snap.pendingImpChoice).toBe(true);
+  });
+
+  test("pendingImpChoice is false for non-Imp players", () => {
+    const snap = makePlayerSnapshot({
+      phase: "night",
+      pendingImpChoice: false,
+    });
+    expect(snap.pendingImpChoice).toBe(false);
+  });
+
+  test("pendingMonkChoice is true only for the Monk during each-night", () => {
+    const snap = makePlayerSnapshot({
+      phase: "night",
+      pendingMonkChoice: true,
+    });
+    expect(snap.pendingMonkChoice).toBe(true);
+  });
+
+  test("pendingPoisonerChoice is true for the Poisoner during night", () => {
+    const snap = makePlayerSnapshot({
+      phase: "first-night",
+      pendingPoisonerChoice: true,
+    });
+    expect(snap.pendingPoisonerChoice).toBe(true);
+  });
+
+  test("pendingButlerChoice is true for the Butler during night", () => {
+    const snap = makePlayerSnapshot({
+      phase: "night",
+      pendingButlerChoice: true,
+    });
+    expect(snap.pendingButlerChoice).toBe(true);
+  });
+
+  test("pendingFortuneTellerChoice is true for the Fortune Teller during night", () => {
+    const snap = makePlayerSnapshot({
+      phase: "first-night",
+      pendingFortuneTellerChoice: true,
+    });
+    expect(snap.pendingFortuneTellerChoice).toBe(true);
+  });
+
+  test("pendingRavenkeeperChoice is false for non-Ravenkeeper players", () => {
+    const snap = makePlayerSnapshot({ pendingRavenkeeperChoice: false });
+    expect(snap.pendingRavenkeeperChoice).toBe(false);
+  });
+
+  test("all pending flags are false by default in day phase", () => {
+    const snap = makePlayerSnapshot({ phase: "day" });
+    expect(snap.pendingImpChoice).toBe(false);
+    expect(snap.pendingMonkChoice).toBe(false);
+    expect(snap.pendingPoisonerChoice).toBe(false);
+    expect(snap.pendingButlerChoice).toBe(false);
+    expect(snap.pendingFortuneTellerChoice).toBe(false);
+    expect(snap.pendingRavenkeeperChoice).toBe(false);
+  });
+});
+
+// ============================================================
+// Spy Grimoire field in PlayerGrimoire
+// ============================================================
+
+describe("Spy Grimoire field in PlayerGrimoire", () => {
+  test("mySpyGrimoire is null for non-Spy players", () => {
+    const snap = makePlayerSnapshot();
+    expect(snap.grimoire.mySpyGrimoire).toBeNull();
+  });
+
+  test("mySpyGrimoire is non-null for the Spy during night", () => {
+    const spyGrimoireRows = [
+      {
+        id: "p1",
+        name: "Alice",
+        trueCharacter: "imp" as const,
+        alignment: "Demon" as const,
+        isAlive: true,
+        isPoisoned: false,
+        isDrunk: false,
+        isProtected: false,
+      },
+    ];
+    const snap = makePlayerSnapshot({
+      phase: "night",
+      grimoire: makePlayerGrimoire({
+        myCharacter: "spy",
+        mySpyGrimoire: spyGrimoireRows,
+      }),
+    });
+    expect(snap.grimoire.mySpyGrimoire).not.toBeNull();
+    expect(snap.grimoire.mySpyGrimoire).toHaveLength(1);
+    expect(snap.grimoire.mySpyGrimoire![0].trueCharacter).toBe("imp");
+    expect(snap.grimoire.mySpyGrimoire![0].alignment).toBe("Demon");
+  });
+
+  test("mySpyGrimoire row contains all required fields", () => {
+    const row = {
+      id: "p1",
+      name: "Bob",
+      trueCharacter: "chef" as const,
+      alignment: "Townsfolk" as const,
+      isAlive: true,
+      isPoisoned: false,
+      isDrunk: false,
+      isProtected: false,
+    };
+    const snap = makePlayerSnapshot({
+      phase: "first-night",
+      grimoire: makePlayerGrimoire({ mySpyGrimoire: [row] }),
+    });
+    const spyRow = snap.grimoire.mySpyGrimoire![0];
+    expect(spyRow).toHaveProperty("id");
+    expect(spyRow).toHaveProperty("name");
+    expect(spyRow).toHaveProperty("trueCharacter");
+    expect(spyRow).toHaveProperty("alignment");
+    expect(spyRow).toHaveProperty("isAlive");
+    expect(spyRow).toHaveProperty("isPoisoned");
+    expect(spyRow).toHaveProperty("isDrunk");
+    expect(spyRow).toHaveProperty("isProtected");
+  });
+});
+
+// ============================================================
+// Voting state in PlayerSnapshot
+// ============================================================
+
+describe("voting state in PlayerSnapshot", () => {
+  test("voting is null when no nomination is in progress", () => {
+    const snap = makePlayerSnapshot({ voting: null });
+    expect(snap.voting).toBeNull();
+  });
+
+  test("voting contains nominatorId, targetId, eligibleVoterIds, votes", () => {
+    const voting = {
+      nominatorId: "alice",
+      targetId: "bob",
+      eligibleVoterIds: ["carol", "dave", "bob"],
+      votes: { carol: true, dave: false },
+    };
+    const snap = makePlayerSnapshot({ voting });
+    expect(snap.voting).not.toBeNull();
+    expect(snap.voting!.nominatorId).toBe("alice");
+    expect(snap.voting!.targetId).toBe("bob");
+    expect(snap.voting!.eligibleVoterIds).toHaveLength(3);
+    expect(snap.voting!.votes["carol"]).toBe(true);
+    expect(snap.voting!.votes["dave"]).toBe(false);
+    expect(snap.voting!.votes["bob"]).toBeUndefined(); // not yet voted
+  });
+
+  test("executionCandidateId is set after a nomination passes threshold", () => {
+    const snap = makePlayerSnapshot({
+      executionCandidateId: "bob",
+      executionCandidateVotes: 3,
+    });
+    expect(snap.executionCandidateId).toBe("bob");
+    expect(snap.executionCandidateVotes).toBe(3);
   });
 });

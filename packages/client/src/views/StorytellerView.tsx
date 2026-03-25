@@ -1853,6 +1853,31 @@ function UndertakerInfoHelper({
     );
   }
 
+  // Healthy Undertaker: info is deterministic — show a single "Deliver" button
+  // so the Storyteller can confirm with one click.  No dropdown needed.
+  if (!isAffected) {
+    return (
+      <div className="ml-6 mt-2 flex items-center gap-3">
+        <span className="text-xs text-slate-400">
+          {t("night.undertaker_executed")}{" "}
+          <strong className="text-slate-200">{charName}</strong>
+        </span>
+        <button
+          className={sent ? "btn-success opacity-60" : "btn-success"}
+          disabled={sent}
+          onClick={handleSend}
+        >
+          {sent
+            ? t("night.info_sent", { defaultValue: "Sent ✓" })
+            : t("night.undertaker_deliver", {
+                defaultValue: "Deliver to Undertaker",
+              })}
+        </button>
+      </div>
+    );
+  }
+
+  // Poisoned / drunk Undertaker: Storyteller must choose what false info to give.
   return (
     <>
       <div className="ml-6 mt-2 flex gap-2 items-center">
