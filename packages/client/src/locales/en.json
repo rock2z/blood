@@ -246,6 +246,24 @@
     "label": "Slayer ({{name}}):",
     "shoot": "Slayer: Shoot!"
   },
+  "home": {
+    "subtitle": "Lobby — choose a room to join",
+    "new_room": "Open a room",
+    "room_id_placeholder": "Room ID (default: \"default\")",
+    "open_as_storyteller": "Open as Storyteller",
+    "loading": "Loading rooms…",
+    "active_rooms": "Active rooms ({{count}})",
+    "no_rooms": "No active rooms yet.",
+    "no_players": "No players in this room yet.",
+    "player_count": "{{count}} players",
+    "storyteller": "Storyteller",
+    "fetch_error": "Could not load rooms — is the server running?",
+    "phase_setup": "Setup",
+    "phase_first_night": "First Night",
+    "phase_day": "Day",
+    "phase_night": "Night",
+    "phase_game_over": "Game Over"
+  },
   "lang": {
     "en": "EN",
     "zh": "中文"

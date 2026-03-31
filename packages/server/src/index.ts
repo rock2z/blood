@@ -16,7 +16,25 @@ import { handleMessage, ClientSocket, sendSnapshot } from "./handler";
 
 const PORT = Number(process.env.PORT ?? 8080);
 
-const httpServer = createServer((_req, res) => {
+const httpServer = createServer((req, res) => {
+  if (req.method === "GET" && req.url === "/api/rooms") {
+    const data = Array.from(rooms.values()).map((room) => ({
+      id: room.id,
+      phase: room.state.phase,
+      players: room.state.grimoire.players.map((p) => ({
+        id: p.id,
+        name: p.name,
+        isAlive: p.isAlive,
+        seatIndex: p.seatIndex,
+      })),
+    }));
+    res.writeHead(200, {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+    });
+    res.end(JSON.stringify({ rooms: data }));
+    return;
+  }
   res.writeHead(200, { "Content-Type": "text/plain" });
   res.end("BotC WebSocket server is running.\n");
 });

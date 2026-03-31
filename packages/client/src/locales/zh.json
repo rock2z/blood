@@ -246,6 +246,24 @@
     "label": "猎手（{{name}}）：",
     "shoot": "猎手：射击！"
   },
+  "home": {
+    "subtitle": "大厅 — 选择要加入的房间",
+    "new_room": "开启房间",
+    "room_id_placeholder": "房间 ID（默认：\"default\"）",
+    "open_as_storyteller": "以说书人身份进入",
+    "loading": "正在加载房间…",
+    "active_rooms": "活跃房间（{{count}} 个）",
+    "no_rooms": "目前没有活跃房间。",
+    "no_players": "此房间暂无玩家。",
+    "player_count": "{{count}} 名玩家",
+    "storyteller": "说书人",
+    "fetch_error": "无法加载房间 — 服务器是否正在运行？",
+    "phase_setup": "准备阶段",
+    "phase_first_night": "第一夜",
+    "phase_day": "白天",
+    "phase_night": "夜晚",
+    "phase_game_over": "游戏结束"
+  },
   "lang": {
     "en": "EN",
     "zh": "中文"
