@@ -107,9 +107,11 @@ export function HomePage(): React.ReactElement {
         {/* Room list */}
         <div className="space-y-3">
           <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-widest">
-            {rooms === null
-              ? t("home.loading")
-              : t("home.active_rooms", { count: rooms.length })}
+            {rooms !== null
+              ? t("home.active_rooms", { count: rooms.length })
+              : !error
+                ? t("home.loading")
+                : null}
           </h2>
 
           {error && <p className="text-rose-400 text-sm">{error}</p>}
