@@ -9,13 +9,19 @@
  *   - Messages are JSON. Protocol defined in ./protocol.ts.
  */
 
+import { createServer } from "http";
 import { WebSocketServer } from "ws";
 import { Room, createRoom } from "./room";
 import { handleMessage, ClientSocket, sendSnapshot } from "./handler";
 
 const PORT = Number(process.env.PORT ?? 8080);
 
-const wss = new WebSocketServer({ port: PORT });
+const httpServer = createServer((_req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("BotC WebSocket server is running.\n");
+});
+
+const wss = new WebSocketServer({ server: httpServer });
 
 /** Map from roomId → Room */
 const rooms = new Map<string, Room>();
@@ -77,6 +83,8 @@ wss.on("connection", (ws, req) => {
   });
 });
 
-console.log(
-  `[server] BotC WebSocket server listening on ws://localhost:${PORT}`,
-);
+httpServer.listen(PORT, () => {
+  console.log(
+    `[server] BotC WebSocket server listening on ws://localhost:${PORT}`,
+  );
+});
