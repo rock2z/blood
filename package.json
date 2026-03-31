@@ -13,7 +13,7 @@
     "lint:fix": "eslint 'packages/*/src/**/*.{ts,tsx}' --fix",
     "format": "prettier --write 'packages/*/src/**/*.{ts,tsx}' 'alignment/**/*.md'",
     "format:check": "prettier --check 'packages/*/src/**/*.{ts,tsx}' 'alignment/**/*.md'",
-    "prepare": "node -e \"if (process.env.BLOOD_ENV === 'PROD') process.exit(1)\" && husky || true"
+    "prepare": "node -e \"if (process.env.BLOOD_ENV !== 'PROD') require('child_process').execSync('husky', {stdio:'inherit'})\""
   },
   "devDependencies": {
     "typescript-eslint": "^8.0.0",
