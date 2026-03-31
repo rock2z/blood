@@ -13,6 +13,16 @@ import { useTranslation } from "react-i18next";
 import { useGame } from "./useGame";
 import { StorytellerView } from "./views/StorytellerView";
 import { PlayerView } from "./views/PlayerView";
+import { HomePage } from "./views/HomePage";
+
+function getParams() {
+  const p = new URLSearchParams(location.search);
+  return {
+    room: p.get("room"),
+    role: p.get("role"),
+    playerId: p.get("playerId"),
+  };
+}
 
 function getRoomId(): string {
   return new URLSearchParams(location.search).get("room") ?? "default";
@@ -46,7 +56,7 @@ function LanguageSwitcher(): React.ReactElement {
   );
 }
 
-export function App(): React.ReactElement {
+function GameApp(): React.ReactElement {
   const roomId = getRoomId();
   const role = getRole();
   const playerId = getPlayerId();
@@ -83,4 +93,20 @@ export function App(): React.ReactElement {
       <PlayerView state={state} send={send} playerId={playerId} />
     </>
   );
+}
+
+export function App(): React.ReactElement {
+  const params = getParams();
+
+  // Show the lobby when the URL has no room/role/playerId params
+  if (!params.room && !params.role && !params.playerId) {
+    return (
+      <>
+        <LanguageSwitcher />
+        <HomePage />
+      </>
+    );
+  }
+
+  return <GameApp />;
 }
