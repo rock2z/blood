@@ -135,7 +135,10 @@ export function useGame(
   }, []);
 
   useEffect(() => {
-    const wsBase = import.meta.env.VITE_WS_URL ?? `ws://${location.host}`;
+    const apiBase = import.meta.env.VITE_API_BASE_URL ?? "";
+    const wsBase = apiBase
+      ? apiBase.replace(/^http/, "ws")
+      : `ws://${location.host}`;
     const wsUrl = `${wsBase}/ws?room=${encodeURIComponent(roomId)}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;

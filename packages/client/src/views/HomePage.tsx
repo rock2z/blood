@@ -33,20 +33,9 @@ function phaseLabel(phase: string, t: (k: string) => string): string {
   return map[phase] ?? phase;
 }
 
-/**
- * Derive the HTTP base URL from VITE_WS_URL so that API requests reach the
- * same server as WebSocket connections.
- *
- * In dev (no VITE_WS_URL), returns "" so fetch("/api/rooms") uses the Vite
- * proxy.  In production, returns e.g. "https://blood-64o1.onrender.com" so
- * the request goes to the backend service, not the static-file host.
- */
-const API_BASE = (() => {
-  const wsUrl = import.meta.env.VITE_WS_URL as string | undefined;
-  if (!wsUrl) return "";
-  const u = new URL(wsUrl);
-  return `${u.protocol === "wss:" ? "https:" : "http:"}//${u.host}`;
-})();
+// In dev (VITE_API_BASE_URL unset) fetch("/api/rooms") uses the Vite proxy.
+// In production set VITE_API_BASE_URL=https://blood-64o1.onrender.com.
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
 function playerLink(roomId: string, player: RoomPlayer): string {
   return `/?room=${encodeURIComponent(roomId)}&playerId=${encodeURIComponent(player.id)}`;
