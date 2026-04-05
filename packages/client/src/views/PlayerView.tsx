@@ -55,8 +55,8 @@ export function PlayerView({
         {/* Header */}
         <div className="flex items-center justify-between mb-6 pr-16">
           <h1 className="text-sm font-bold whitespace-nowrap">
-            <span className="text-rose-400">Blood</span>
-            <span className="text-white"> on the Clocktower</span>
+            <span className="text-rose-400">{t("app.title_accent")}</span>
+            <span className="text-white">{t("app.title_rest")}</span>
           </h1>
           <div className="flex items-center gap-2 shrink-0">
             <span
@@ -455,7 +455,7 @@ function SpyGrimoirePanel({
                   </td>
                   <td className="py-1 pr-3">
                     <span className={isEvil ? "badge-evil" : "badge-good"}>
-                      {p.alignment}
+                      {t(`alignment.${p.alignment}`)}
                     </span>
                   </td>
                   <td className="py-1 text-zinc-400">

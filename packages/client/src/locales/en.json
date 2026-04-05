@@ -1,7 +1,16 @@
 {
   "app": {
     "title": "Blood on the Clocktower",
+    "title_accent": "Blood",
+    "title_rest": " on the Clocktower",
+    "storyteller": "Storyteller",
     "connecting": "Connecting to room {{room}}…"
+  },
+  "alignment": {
+    "Townsfolk": "Townsfolk",
+    "Outsider": "Outsider",
+    "Minion": "Minion",
+    "Demon": "Demon"
   },
   "phase_bar": {
     "phase": "Phase:",
@@ -171,6 +180,10 @@
   },
   "player": {
     "title": "Blood on the Clocktower",
+    "spy_col_name": "Player",
+    "spy_col_character": "Character",
+    "spy_col_align": "Align",
+    "spy_col_status": "Status",
     "phase": "Phase:",
     "day": "Day:",
     "wins": "{{winner}} WINS",

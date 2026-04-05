@@ -1,7 +1,16 @@
 {
   "app": {
     "title": "血染钟楼",
+    "title_accent": "血染",
+    "title_rest": "钟楼",
+    "storyteller": "说书人",
     "connecting": "正在连接到房间 {{room}}…"
+  },
+  "alignment": {
+    "Townsfolk": "镇民",
+    "Outsider": "外来者",
+    "Minion": "爪牙",
+    "Demon": "恶魔"
   },
   "phase_bar": {
     "phase": "阶段：",
@@ -171,6 +180,10 @@
   },
   "player": {
     "title": "血染钟楼",
+    "spy_col_name": "玩家",
+    "spy_col_character": "角色",
+    "spy_col_align": "阵营",
+    "spy_col_status": "状态",
     "phase": "阶段：",
     "day": "第",
     "wins": "{{winner}} 获胜",

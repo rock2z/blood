@@ -37,6 +37,7 @@ interface Props {
 }
 
 export function StorytellerView({ state, send }: Props): React.ReactElement {
+  const { t } = useTranslation();
   const dispatch = (action: Action) =>
     send({ type: "action", payload: action });
 
@@ -45,11 +46,11 @@ export function StorytellerView({ state, send }: Props): React.ReactElement {
   return (
     <div className="min-h-screen text-slate-100 px-4 py-6 font-sans">
       <h1 className="text-2xl font-bold mb-6 pr-16">
-        <span className="text-rose-400">Blood</span>
-        <span className="text-white"> on the Clocktower</span>
+        <span className="text-rose-400">{t("app.title_accent")}</span>
+        <span className="text-white">{t("app.title_rest")}</span>
         <span className="text-zinc-600 font-normal text-base">
           {" "}
-          — Storyteller
+          — {t("app.storyteller")}
         </span>
       </h1>
 
@@ -224,8 +225,8 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
         {t("setup.instructions_3")}
       </p>
 
-      <div className="card overflow-hidden mb-4">
-        <table className="w-full text-sm">
+      <div className="card overflow-x-auto mb-4">
+        <table className="w-full min-w-max text-sm">
           <thead>
             <tr className="border-b border-white/[0.08]">
               {[
@@ -313,7 +314,7 @@ function SetupPlayers({ send }: { send: SendFn }): React.ReactElement {
                       isEvil ? "text-red-400" : "text-blue-400",
                     )}
                   >
-                    {p?.alignment ?? "—"}
+                    {p ? t(`alignment.${p.alignment}`) : "—"}
                   </td>
                   <td className="px-3 py-2 w-10">
                     <button
@@ -481,7 +482,7 @@ function GrimoireTable({
     <div>
       <h2 className="section-label mb-3">{t("grimoire.title")}</h2>
       <div className="card overflow-x-auto mb-3">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-max text-sm">
           <thead>
             <tr className="border-b border-white/[0.08]">
               {columns.map((h) => (
@@ -630,7 +631,7 @@ function PlayerRow({
               : "text-blue-400 bg-blue-950/40",
           )}
         >
-          {alignment}
+          {t(`alignment.${alignment}`)}
         </span>,
       )}
       {cell(
